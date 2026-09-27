@@ -1,0 +1,11 @@
+# Hermes files to sync
+!memories/
+!skills/
+!plugins/
+!config.yaml
+!*.md
+
+# Ignore everything else
+*
+!*/
+!.gitignore
