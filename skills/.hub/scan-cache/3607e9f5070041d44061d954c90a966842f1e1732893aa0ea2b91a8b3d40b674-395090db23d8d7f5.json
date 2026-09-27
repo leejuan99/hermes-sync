@@ -1,0 +1,53 @@
+{
+  "bundle_hash": "sha256:3607e9f5070041d44061d954c90a966842f1e1732893aa0ea2b91a8b3d40b674",
+  "scanner_version": "skills-guard-v6",
+  "source": "official",
+  "source_url": "official/mlops/evaluation/evaluating-llms-harness",
+  "verdict": "caution",
+  "trust_level": "builtin",
+  "findings": [
+    {
+      "pattern_id": "python_os_system",
+      "severity": "high",
+      "category": "execution",
+      "file": "SKILL.md",
+      "line": 207,
+      "match": "os.system(f\"./eval_checkpoint.sh checkpoints step-{step}\")",
+      "description": "os.system() \u2014 unguarded shell execution"
+    },
+    {
+      "pattern_id": "python_os_system",
+      "severity": "high",
+      "category": "execution",
+      "file": "SKILL.md",
+      "line": 224,
+      "match": "os.system(f\"lm_eval --model hf --model_args pretrained={checkpoint_path} ...\")",
+      "description": "os.system() \u2014 unguarded shell execution"
+    },
+    {
+      "pattern_id": "unpinned_pip_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "SKILL.md",
+      "line": 27,
+      "match": "pip install lm-eval",
+      "description": "pip install without version pinning"
+    },
+    {
+      "pattern_id": "unpinned_pip_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "SKILL.md",
+      "line": 354,
+      "match": "pip install vllm",
+      "description": "pip install without version pinning"
+    }
+  ],
+  "rules": [
+    "python_os_system",
+    "unpinned_pip_install"
+  ],
+  "scanned_at": "2026-09-26T11:01:42.909625+00:00",
+  "summary": "evaluating-llms-harness: caution \u2014 4 finding(s) in execution, supply_chain",
+  "fresh": true
+}

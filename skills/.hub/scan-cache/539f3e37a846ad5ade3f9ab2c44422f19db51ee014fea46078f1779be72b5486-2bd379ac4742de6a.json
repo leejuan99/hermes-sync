@@ -1,0 +1,306 @@
+{
+  "bundle_hash": "sha256:539f3e37a846ad5ade3f9ab2c44422f19db51ee014fea46078f1779be72b5486",
+  "scanner_version": "skills-guard-v6",
+  "source": "skills-sh/NousResearch/hermes-agent/skills/creative/popular-web-designs",
+  "source_url": "https://github.com/NousResearch/hermes-agent/skills/creative/popular-web-designs",
+  "verdict": "caution",
+  "trust_level": "community",
+  "findings": [
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "SKILL.md",
+      "line": 42,
+      "match": "4. Pair with the `generative-widgets` skill to serve the result via cloudflared tunnel",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "SKILL.md",
+      "line": 85,
+      "match": "Write the file with `write_file`, serve with the `generative-widgets` workflow (cloudflared tunnel),",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "agent_config_ref",
+      "severity": "low",
+      "category": "persistence",
+      "file": "SKILL.md",
+      "line": 122,
+      "match": "| `claude.md` | Anthropic Claude | Warm terracotta accent, clean editorial layout |",
+      "description": "references agent config files (informational; only modification intent is scored)"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\airbnb.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\airtable.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "html_comment_injection",
+      "severity": "high",
+      "category": "injection",
+      "file": "templates\\apple.md",
+      "line": 11,
+      "match": "> <!-- No CDN needed \u2014 uses system fonts -->",
+      "description": "hidden instructions in HTML comments"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\apple.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\bmw.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\cal.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\claude.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\clay.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\clickhouse.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\cohere.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\coinbase.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\composio.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\cursor.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\elevenlabs.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\expo.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\figma.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\framer.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\hashicorp.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\ibm.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\intercom.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\kraken.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\linear.app.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\lovable.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\minimax.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\mintlify.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\miro.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\mistral.ai.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\mongodb.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    },
+    {
+      "pattern_id": "tunnel_service",
+      "severity": "high",
+      "category": "network",
+      "file": "templates\\notion.md",
+      "line": 13,
+      "match": "> Use `write_file` to create HTML, serve via `generative-widgets` skill (cloudflared tunnel).",
+      "description": "uses tunneling service for external access"
+    }
+  ],
+  "rules": [
+    "agent_config_ref",
+    "html_comment_injection",
+    "tunnel_service"
+  ],
+  "scanned_at": "2026-09-26T11:32:10.574955+00:00",
+  "summary": "popular-web-designs: caution \u2014 32 finding(s) in injection, network, persistence",
+  "fresh": true
+}

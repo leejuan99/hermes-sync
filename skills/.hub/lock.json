@@ -1,0 +1,273 @@
+{
+  "version": 1,
+  "installed": {
+    "ascii-art": {
+      "source": "official",
+      "identifier": "official/creative/ascii-art",
+      "trust_level": "builtin",
+      "scan_verdict": "caution",
+      "content_hash": "sha256:ac891a5e9c5872c5",
+      "install_path": "creative/ascii-art",
+      "files": [
+        "SKILL.md"
+      ],
+      "metadata": {},
+      "scan_provenance": {
+        "bundle_hash": "sha256:ac891a5e9c5872c5a63657b452ba679c7ebf61e9af8702734cf31307b68c9d82",
+        "scanner_version": "skills-guard-v6",
+        "source": "official",
+        "source_url": "official/creative/ascii-art",
+        "verdict": "caution",
+        "trust_level": "builtin",
+        "findings": [
+          {
+            "pattern_id": "unpinned_pip_install",
+            "severity": "medium",
+            "category": "supply_chain",
+            "file": "SKILL.md",
+            "line": 27,
+            "match": "pip install pyfiglet --break-system-packages -q",
+            "description": "pip install without version pinning"
+          },
+          {
+            "pattern_id": "sudo_usage",
+            "severity": "high",
+            "category": "privilege_escalation",
+            "file": "SKILL.md",
+            "line": 92,
+            "match": "sudo apt install cowsay -y    # Debian/Ubuntu",
+            "description": "uses sudo (privilege escalation)"
+          },
+          {
+            "pattern_id": "sudo_usage",
+            "severity": "high",
+            "category": "privilege_escalation",
+            "file": "SKILL.md",
+            "line": 136,
+            "match": "sudo apt install boxes -y    # Debian/Ubuntu",
+            "description": "uses sudo (privilege escalation)"
+          },
+          {
+            "pattern_id": "sudo_usage",
+            "severity": "high",
+            "category": "privilege_escalation",
+            "file": "SKILL.md",
+            "line": 171,
+            "match": "sudo apt install toilet toilet-fonts -y    # Debian/Ubuntu",
+            "description": "uses sudo (privilege escalation)"
+          },
+          {
+            "pattern_id": "sudo_usage",
+            "severity": "high",
+            "category": "privilege_escalation",
+            "file": "SKILL.md",
+            "line": 202,
+            "match": "sudo snap install ascii-image-converter",
+            "description": "uses sudo (privilege escalation)"
+          },
+          {
+            "pattern_id": "sudo_usage",
+            "severity": "high",
+            "category": "privilege_escalation",
+            "file": "SKILL.md",
+            "line": 219,
+            "match": "sudo apt install jp2a -y",
+            "description": "uses sudo (privilege escalation)"
+          }
+        ],
+        "rules": [
+          "sudo_usage",
+          "unpinned_pip_install"
+        ],
+        "scanned_at": "2026-09-26T11:01:41.679124+00:00",
+        "summary": "ascii-art: caution — 6 finding(s) in privilege_escalation, supply_chain",
+        "fresh": true
+      },
+      "installed_at": "2026-09-26T11:01:41.714614+00:00",
+      "updated_at": "2026-09-26T11:01:41.714614+00:00"
+    },
+    "sketch": {
+      "source": "official",
+      "identifier": "official/creative/sketch",
+      "trust_level": "builtin",
+      "scan_verdict": "backfilled",
+      "content_hash": "sha256:bea886ff483216bf",
+      "install_path": "creative/sketch",
+      "files": [
+        "SKILL.md"
+      ],
+      "metadata": {
+        "backfilled_from": "optional-skills"
+      },
+      "installed_at": "2026-09-01T11:36:14.264833+00:00",
+      "updated_at": "2026-09-01T11:36:14.264833+00:00"
+    },
+    "evaluating-llms-harness": {
+      "source": "official",
+      "identifier": "official/mlops/evaluation/evaluating-llms-harness",
+      "trust_level": "builtin",
+      "scan_verdict": "caution",
+      "content_hash": "sha256:3607e9f5070041d4",
+      "install_path": "mlops/evaluation/evaluating-llms-harness",
+      "files": [
+        "SKILL.md",
+        "references\\api-evaluation.md",
+        "references\\benchmark-guide.md",
+        "references\\custom-tasks.md",
+        "references\\distributed-eval.md"
+      ],
+      "metadata": {},
+      "scan_provenance": {
+        "bundle_hash": "sha256:3607e9f5070041d44061d954c90a966842f1e1732893aa0ea2b91a8b3d40b674",
+        "scanner_version": "skills-guard-v6",
+        "source": "official",
+        "source_url": "official/mlops/evaluation/evaluating-llms-harness",
+        "verdict": "caution",
+        "trust_level": "builtin",
+        "findings": [
+          {
+            "pattern_id": "python_os_system",
+            "severity": "high",
+            "category": "execution",
+            "file": "SKILL.md",
+            "line": 207,
+            "match": "os.system(f\"./eval_checkpoint.sh checkpoints step-{step}\")",
+            "description": "os.system() — unguarded shell execution"
+          },
+          {
+            "pattern_id": "python_os_system",
+            "severity": "high",
+            "category": "execution",
+            "file": "SKILL.md",
+            "line": 224,
+            "match": "os.system(f\"lm_eval --model hf --model_args pretrained={checkpoint_path} ...\")",
+            "description": "os.system() — unguarded shell execution"
+          },
+          {
+            "pattern_id": "unpinned_pip_install",
+            "severity": "medium",
+            "category": "supply_chain",
+            "file": "SKILL.md",
+            "line": 27,
+            "match": "pip install lm-eval",
+            "description": "pip install without version pinning"
+          },
+          {
+            "pattern_id": "unpinned_pip_install",
+            "severity": "medium",
+            "category": "supply_chain",
+            "file": "SKILL.md",
+            "line": 354,
+            "match": "pip install vllm",
+            "description": "pip install without version pinning"
+          }
+        ],
+        "rules": [
+          "python_os_system",
+          "unpinned_pip_install"
+        ],
+        "scanned_at": "2026-09-26T11:01:42.909625+00:00",
+        "summary": "evaluating-llms-harness: caution — 4 finding(s) in execution, supply_chain",
+        "fresh": true
+      },
+      "installed_at": "2026-09-26T11:01:42.940722+00:00",
+      "updated_at": "2026-09-26T11:01:42.940722+00:00"
+    },
+    "serving-llms-vllm": {
+      "source": "official",
+      "identifier": "official/mlops/inference/serving-llms-vllm",
+      "trust_level": "builtin",
+      "scan_verdict": "backfilled",
+      "content_hash": "sha256:688c281ab63bb0ea",
+      "install_path": "mlops/inference/serving-llms-vllm",
+      "files": [
+        "references/optimization.md",
+        "references/quantization.md",
+        "references/server-deployment.md",
+        "references/troubleshooting.md",
+        "SKILL.md"
+      ],
+      "metadata": {
+        "backfilled_from": "optional-skills"
+      },
+      "installed_at": "2026-09-01T11:36:14.311536+00:00",
+      "updated_at": "2026-09-01T11:36:14.311536+00:00"
+    },
+    "huggingface-hub": {
+      "source": "official",
+      "identifier": "official/mlops/huggingface-hub",
+      "trust_level": "builtin",
+      "scan_verdict": "backfilled",
+      "content_hash": "sha256:55fa8eb6c3b4be8c",
+      "install_path": "mlops/huggingface-hub",
+      "files": [
+        "SKILL.md"
+      ],
+      "metadata": {
+        "backfilled_from": "optional-skills"
+      },
+      "installed_at": "2026-09-01T11:36:14.314536+00:00",
+      "updated_at": "2026-09-01T11:36:14.314536+00:00"
+    },
+    "openhue": {
+      "source": "official",
+      "identifier": "official/smart-home/openhue",
+      "trust_level": "builtin",
+      "scan_verdict": "safe",
+      "content_hash": "sha256:6b716cd4747e064a",
+      "install_path": "smart-home/openhue",
+      "files": [
+        "SKILL.md"
+      ],
+      "metadata": {},
+      "scan_provenance": {
+        "bundle_hash": "sha256:6b716cd4747e064ad5d679fcb54d95555b99f836c16004dac134bf13abcbed5f",
+        "scanner_version": "skills-guard-v6",
+        "source": "official",
+        "source_url": "official/smart-home/openhue",
+        "verdict": "safe",
+        "trust_level": "builtin",
+        "findings": [],
+        "rules": [],
+        "scanned_at": "2026-09-26T11:01:43.277288+00:00",
+        "summary": "openhue: clean scan, no threats detected",
+        "fresh": true
+      },
+      "installed_at": "2026-09-26T11:01:43.292427+00:00",
+      "updated_at": "2026-09-26T11:01:43.292427+00:00"
+    },
+    "architecture-diagram": {
+      "source": "skills.sh",
+      "identifier": "skills-sh/NousResearch/hermes-agent/skills/creative/architecture-diagram",
+      "trust_level": "community",
+      "scan_verdict": "safe",
+      "content_hash": "sha256:8a82f6499641b52f",
+      "install_path": "architecture-diagram",
+      "files": [
+        "SKILL.md",
+        "templates/template.html"
+      ],
+      "metadata": {
+        "source_url": "https://github.com/NousResearch/hermes-agent/tree/d0288be5b3330d2442e3907185b8e9d0958297bb/skills/creative/architecture-diagram",
+        "source_revision": "d0288be5b3330d2442e3907185b8e9d0958297bb",
+        "detail_url": "https://skills.sh/NousResearch/hermes-agent/skills/creative/architecture-diagram",
+        "repo_url": "https://github.com/NousResearch/hermes-agent"
+      },
+      "scan_provenance": {
+        "bundle_hash": "sha256:8a82f6499641b52f7dabbf9d9c64d351dc4a71e229744e91e5398d535f5e86ba",
+        "scanner_version": "skills-guard-v6",
+        "source": "skills-sh/NousResearch/hermes-agent/skills/creative/architecture-diagram",
+        "source_url": "https://github.com/NousResearch/hermes-agent/tree/d0288be5b3330d2442e3907185b8e9d0958297bb/skills/creative/architecture-diagram",
+        "verdict": "safe",
+        "trust_level": "community",
+        "findings": [],
+        "rules": [],
+        "scanned_at": "2026-09-26T11:30:10.236841+00:00",
+        "summary": "architecture-diagram: clean scan, no threats detected",
+        "fresh": true
+      },
+      "installed_at": "2026-09-26T11:30:10.259973+00:00",
+      "updated_at": "2026-09-26T11:30:10.259973+00:00"
+    }
+  }
+}

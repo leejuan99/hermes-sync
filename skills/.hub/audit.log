@@ -1,0 +1,5 @@
+2026-09-26T11:01:41Z INSTALL ascii-art official:builtin caution sha256:ac891a5e9c5872c5
+2026-09-26T11:01:42Z INSTALL evaluating-llms-harness official:builtin caution sha256:3607e9f5070041d4
+2026-09-26T11:01:43Z INSTALL openhue official:builtin safe sha256:6b716cd4747e064a
+2026-09-26T11:30:10Z INSTALL architecture-diagram skills.sh:community safe sha256:8a82f6499641b52f
+2026-09-26T11:32:10Z BLOCKED popular-web-designs skills.sh:community caution 32_findings

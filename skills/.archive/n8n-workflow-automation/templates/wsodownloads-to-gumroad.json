@@ -1,0 +1,308 @@
+{
+  "name": "WSO Downloads → Gumroad Auto Post",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "cronExpression": "0 8 * * *",
+              "timezone": "Asia/Jakarta"
+            }
+          ]
+        }
+      },
+      "id": "1",
+      "name": "Cron 8 AM Daily",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.wsodownloads.in/feed/",
+        "method": "GET",
+        "options": {
+          "headers": {
+            "Cookie": "={{$credentials.wsodownloadsCookie}}",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          },
+          "timeout": 30000
+        }
+      },
+      "id": "2",
+      "name": "Fetch RSS Feed",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        500,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": "WSO Downloads Cookie"
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "3",
+      "name": "Parse XML to JSON",
+      "type": "n8n-nodes-base.xml",
+      "typeVersion": 1,
+      "position": [
+        750,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "fieldToSplit": "rss.channel.item",
+        "options": {}
+      },
+      "id": "4",
+      "name": "Split Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [
+        1000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.title}}",
+              "operation": "isNotEmpty"
+            },
+            {
+              "value1": "={{$json.link}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "5",
+      "name": "Filter Valid Items",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "command": "gumroad",
+        "arguments": "products create --name \"{{$json.title}}\" --description \"{{$json.description || $json['content:encoded'] || 'Imported from WSO Downloads'}}\" --url \"{{$json.link}}\" --json",
+        "options": {
+          "cwd": "/root"
+        }
+      },
+      "id": "6",
+      "name": "Create Gumroad Product",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1500,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{$json.stderr}}",
+              "operation": "isNotEmpty"
+            }
+          ]
+        }
+      },
+      "id": "7",
+      "name": "Check Error",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        1750,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "content": "✅ **Posted to Gumroad**\n\n**Title:** {{$json[\"title\"]}}\n**Link:** {{$json[\"link\"]}}\n**Gumroad Response:** {{$json[\"stdout\"]}}"
+      },
+      "id": "8",
+      "name": "Success Log",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        2000,
+        100
+      ]
+    },
+    {
+      "parameters": {
+        "content": "❌ **Failed to Post**\n\n**Title:** {{$json[\"title\"]}}\n**Link:** {{$json[\"link\"]}}\n**Error:** {{$json[\"stderr\"]}}"
+      },
+      "id": "9",
+      "name": "Error Log",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3,
+      "position": [
+        2000,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Track posted items to avoid duplicates\n// You can extend this to save to a file/DB\nconst posted = $getWorkflowStaticData('global').posted || [];\nconst itemId = $json.link;\n\nif (!posted.includes(itemId)) {\n  posted.push(itemId);\n  $getWorkflowStaticData('global').posted = posted;\n  return [{ json: { ...$json, isNew: true } }];\n}\nreturn [{ json: { ...$json, isNew: false } }];"
+      },
+      "id": "10",
+      "name": "Deduplicate Check",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1250,
+        450
+      ]
+    }
+  ],
+  "connections": {
+    "Cron 8 AM Daily": {
+      "main": [
+        [
+          {
+            "node": "Fetch RSS Feed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch RSS Feed": {
+      "main": [
+        [
+          {
+            "node": "Parse XML to JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse XML to JSON": {
+      "main": [
+        [
+          {
+            "node": "Split Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Items": {
+      "main": [
+        [
+          {
+            "node": "Filter Valid Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Valid Items": {
+      "main": [
+        [
+          {
+            "node": "Deduplicate Check",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Split Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deduplicate Check": {
+      "main": [
+        [
+          {
+            "node": "Create Gumroad Product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Gumroad Product": {
+      "main": [
+        [
+          {
+            "node": "Check Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Error": {
+      "main": [
+        [
+          {
+            "node": "Error Log",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Success Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Success Log": {
+      "main": [
+        [
+          {
+            "node": "Split Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Error Log": {
+      "main": [
+        [
+          {
+            "node": "Split Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "id": "1"
+}
