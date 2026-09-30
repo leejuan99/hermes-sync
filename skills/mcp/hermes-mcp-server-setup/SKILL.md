@@ -102,6 +102,26 @@ problem, not a config problem. Do this before telling the user it is set up.
 - **An OAuth server left `enabled: true` without a completed login errors on every
   startup.** If you abandon a flow (`skip`, or you kill the process), set
   `enabled: false` again or finish the login.
+- **A headless gateway can never complete an OAuth login.** `hermes mcp login` needs a
+  browser and a loopback callback, so from cron/systemd it dies with
+  `OAuthNonInteractiveError: MCP OAuth requires browser authorization but no
+  interactive session is available`. Mint the tokens once from a PTY (`ssh -t ...`), or
+  copy `mcp-tokens/` from a machine that already authorized — the gateway only ever
+  reads those files, so it starts working the moment they exist.
+- **`configured OAuth client changed (client_id 'X' -> 'X')` means the *secret* changed,
+  not the id.** Hermes **deletes the stored tokens on every start** when
+  `oauth.client_secret` in `config.yaml` disagrees with `client_secret` in
+  `<name>.client.json`, so the server re-auth-loops on each restart. The message names
+  only the client_id, which makes it read as a no-op. Align the two values and the loop
+  stops.
+- **The SDK itself sometimes needs patching, and that patch is per-machine.** When a
+  hosted server rejects an otherwise-valid request — the textbook case is an empty
+  `_meta` object answered with JSON-RPC `-32602` — the fix lands in
+  `site-packages/mcp/...`, which no config sync carries. Patch **every** venv Hermes
+  imports `mcp` from; on a server install one of them is
+  `/usr/local/lib/hermes-agent/venv`, outside `~/.hermes`, so a script that globs only
+  the Hermes home reports "nothing to do" while the server keeps failing. Re-apply it
+  after upgrades, and see `hermes-multimachine-sync` when two hosts must stay in step.
 
 ## Files
 
