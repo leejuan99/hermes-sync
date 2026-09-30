@@ -1,16 +1,13 @@
 ---
 name: typesafe-ai
+description: "Use when building with TypeSafe System One (Jev) for structured decisions."
+version: 1.0.0
+author: TypeSafe
 license: MIT
-description: >
-  Build AI-powered software with TypeSafe: small units of AI intelligence you
-  can use like programming primitives. Its System One models, including Jev,
-  turn natural language and application state into typed judgments and
-  probabilities that code can combine. Use when a feature needs programmable
-  common sense, when brainstorming what AI could make possible in an app, or
-  when an LLM prompt-and-parse step could become a structured decision.
-  Applications include routing, ranking, extraction, verification, and
-  interactive experiences; these are starting points, not the limits.
-  Read live docs and cookbooks to find useful patterns and discover new combinations.
+platforms: [linux, macos, windows]
+metadata:
+  hermes:
+    tags: [typesafe, system-one, jev, decisions, routing, classification]
 ---
 
 # Build with TypeSafe
