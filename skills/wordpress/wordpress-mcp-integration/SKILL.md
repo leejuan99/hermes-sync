@@ -312,6 +312,10 @@ When standard WooCommerce order checks fail (order not found as post ID or WooCo
    - If MCP persistently fails, use WordPress REST API directly with application passwords
    - Check WooCommerce orders page in WP-admin for visual confirmation
    - Use Fluent CRM contact list to see if purchase activity is recorded there
+## Using Novamira CLI (Alternative)
+
+You can also use the Novamira CLI tool directly to interact with the WordPress site without configuring an MCP server. See the `hermes-agent` skill for installation and usage details.
+
 
 ## References
 

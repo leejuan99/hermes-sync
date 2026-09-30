@@ -1,192 +1,152 @@
-# aaPanel 404 Debugging Session - Detailed Reference
+# aaPanel: Blank Dashboard / 404 Diagnosis
 
-## Session Overview
-**Date:** 2026-07-03 to 2026-07-04 (initial), 2026-08-29 (follow-up session)
-**Issue:** aaPanel returning 404 on admin path `/a83a1c60/`
-**Root Cause:** APSESS_PATH_RE middleware requiring `apsess_<token>/` prefix
+## The Symptom
 
-## Root Cause Analysis
+The user logs into aaPanel successfully, the page frame renders, but the dashboard shows **no numbers and no website data** — or login appears to succeed and then loops back. Websites and databases are fine; only the panel UI is empty.
 
-### The Middleware
+## The Model: what `ApsessPathMiddleware` actually does
+
 ```python
-# /www/server/panel/BTPanel/__init__.py line 59
+# /www/server/panel/BTPanel/__init__.py
 APSESS_PATH_RE = re.compile(r"^/((?:apsess_)+[A-Za-z0-9]{16,32})(/.*|$)")
+wrap_apsess_middleware(app)   # KEEP ENABLED
 ```
 
-This middleware wraps the Flask app via:
-```python
-wrap_apsess_middleware(app)  # Line 216
+It is a **WSGI** middleware wrapping `app.wsgi_app`. Per request it:
+
+1. Matches `PATH_INFO` against `APSESS_PATH_RE`.
+2. **No match** → sets `environ['bt.apsess_token'] = ''` and calls the app untouched. It does *not* reject the request.
+3. **Match** → strips the token segment, sets `environ['PATH_INFO']` to the real path, records `bt.apsess_token`, and continues.
+
+So a tokenless request like `/login` reaches Flask as `/login` either way. The middleware is not an access gate.
+
+### Why disabling it breaks the dashboard
+
+The frontend (Vue, `static/vite/...`) has an axios request interceptor roughly equivalent to:
+
+```js
+const a = localStorage.getItem('apsess');
+if (a) e.url = `/apsess_${a}${e.url}`;
 ```
 
-### Middleware Logic (`ApsessPathMiddleware`)
-1. Extracts token from URL path: `/apsess_<token>/<real_path>`
-2. Sets `environ['bt.apsess_token']` and rewrites `PATH_INFO`
-3. If NO token found → sets empty token but **continues to app** (allows through)
-4. BUT `check_apsess_path()` in `@app.before_request` **blocks** requests without valid token
+`localStorage['apsess']` is populated by a bootstrap `<script>` that the same middleware injects into served HTML (`_inject_apsess_html_bootstrap`). Result: **the browser calls every API as `/apsess_<token>/system?action=…`**. With the middleware commented out those URLs are never rewritten, so every API call 404s and the dashboard renders empty. Commenting out `wrap_apsess_middleware(app)` is a regression, not a fix.
 
-### The `require_apsess()` Function
-Determines which paths need apsess validation:
-```python
-def require_apsess():
-    # Exempt paths:
-    fixed_entry_paths = {'/', admin_path, route_path}
-    if normalized_path in fixed_entry_paths:
-        return False
-    
-    if is_safe_static_route_request():
-        return False
-    
-    if is_plugin_api_exempt_request():
-        return False
-    
-    # Public paths exempt:
-    public_paths = (
-        '/login', '/v2/login', '/install', '/safe', '/hook', '/public',
-        '/down', '/userLang', '/google/redirect', '/google/callback'
-    )
-    for p in public_paths:
-        if request.path == p or request.path.startswith(p):
-            return False
-    
-    # Authenticated users: FORCE apsess validation
-    return session.get('login', False)
-```
+Token value is not validated for path rewriting — any 16-32 char alphanumeric token works.
 
-**Critical Issue:** `/a83a1c60/` is NOT in `fixed_entry_paths` (it's `route_path` but with trailing slash mismatch) and NOT in `public_paths`.
+## Diagnosis order
 
-### The Middleware Chain
-1. Request comes in: `/a83a1c60/`
-2. `ApsessPathMiddleware` - no token found → sets empty token, continues to app
-3. `request_check()` runs → calls `check_apsess_path()`
-4. `check_apsess_path()` → no token in environ → calls `handle_invalid_apsess()`
-5. `handle_invalid_apsess()` → `require_apsess()` returns `True` (user logged in)
-6. `handle_invalid_apsess()` → returns `abort(403)` → nginx shows 404
-
-### Why Login Works Sometimes
-The `/login` path IS in `public_paths` exempt list, so `require_apsess()` returns `False` for it.
-
-### CRITICAL: Disabling Middleware Alone Is NOT Enough (Aug 2026 Discovery)
-**Discovered in Aug 2026 session:** Simply commenting out `wrap_apsess_middleware(app)` does NOT fully disable apsess validation because:
-- The `request_check()` @app.before_request handler (line 626) STILL calls `check_apsess_path()`
-- `check_apsess_path()` does its OWN token validation independent of middleware
-- Even with middleware disabled, `request_check()` will block requests without valid token for authenticated users
-
-**To FULLY disable apsess validation:**
 ```bash
-# Option 1: Comment out middleware wrap
-sed -i 's|^wrap_apsess_middleware(app)|# wrap_apsess_middleware(app)|' /www/server/panel/BTPanel/__init__.py
+UA='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+H='https://<host>:<port>'
 
-# Option 2: ALSO modify check_apsess_path() to always return True
-sed -i '7822,7850s/return True/return True  # DISABLED/' /www/server/panel/BTPanel/__init__.py
-# Or edit check_apsess_path() to just: return True at the start
+# 1. middleware enabled?
+grep -n 'wrap_apsess_middleware' /www/server/panel/BTPanel/__init__.py
 
-# Option 3: Add admin path to whitelist in require_apsess() (preferred)
-# Edit /www/server/panel/BTPanel/__init__.py, in require_apsess():
-public_paths = (
-    '/a83a1c60/',
-    '/a83a1c60',
-    '/v2/a83a1c60/',
-    '/v2/a83a1c60',
-    # ... existing paths
-)
+# 2. route table as Flask sees it
+cd /www/server/panel && ./pyenv/bin/python3 -c "from BTPanel import app; [print(r) for r in app.url_map.iter_rules()]"
+
+# 3. both URL shapes must be 200 (browser UA is mandatory — see below)
+curl -k -s -A "$UA" -o /dev/null -w 'plain  %{http_code}\n' "$H/system?action=GetCpuInfo"
+curl -k -s -A "$UA" -o /dev/null -w 'apsess %{http_code}\n' "$H/apsess_abc123def456ghi789jkl012mno345pq/system?action=GetCpuInfo"
+
+# 4. page entry point
+curl -k -s -A "$UA" -o /dev/null -w 'login  %{http_code}\n' "$H/login"
+curl -k -s -A "$UA" -o /dev/null -w 'root   %{http_code}\n' "$H/"   # 302 -> /login when logged out is correct
 ```
 
-### The `check_apsess_path()` Function (Line 7822)
-```python
-def check_apsess_path():
-    apsess_token = build_apsess_url_token(request.environ.get('bt.apsess_token', ''))
-    g.apsess_path_token = apsess_token
-    g.apsess_verified = False
-    
-    if not apsess_token:
-        return True  # ALLOWS through if no token (when middleware disabled)
-    
-    expected_token = get_apsess_url_token_from_session()
-    if not expected_token or apsess_token != expected_token:
-        return True  # ALLOWS through on mismatch (when middleware disabled)
-    
-    g.apsess_verified = True
-    session['apsess_verified'] = True
-    return True
-```
+### The User-Agent trap
 
-**Key insight:** When middleware is disabled, `bt.apsess_token` is empty, so `check_apsess_path()` returns `True` immediately - this is why disabling middleware CAN work. But the 404 persisted due to OTHER issues (GetClientIp error, system freeze).
+`is_spider()` in `/www/server/panel/class/panelDefense.py` returns 404 for requests with a missing, short (<24 char), or toolish User-Agent (`curl`, `python`, `wget`, …). Testing the panel without `-A 'Mozilla/5.0 …'` produces 404s that look like routing or auth failures and send you down the wrong path. Always set a browser UA when probing aaPanel.
 
-### Why 404 Persisted Even After Disabling Middleware (Aug 2026 Session)
-1. **GetClientIp SyntaxError** - `request.remote_addr` was None causing AttributeError in error handler
-2. **System freeze** - Load 151, Memory 92%, Swap 100% - VPS completely frozen
-3. **Panel process restart issues** - bt.service showed "exited" but webserver processes alive
-4. **uri_match regex** - Blocks paths not matching `^/[\w_\./\-]*$` pattern
+## Keep `admin_path` at `/`
 
-## Fixes Applied
+The frontend's API calls are **root-relative**. A custom `admin_path` therefore breaks the dashboard, and it does not hide the panel anyway: the catch-all GET route `/<path:sub_path>` renders the index for any path.
 
-### 1. Fixed GetClientIp Syntax Error
-**File:** `/www/server/panel/class/public/common.py` line 1113
-**Issue:** Broken single-line function causing SyntaxError
-**Fix:** Proper multi-line function with proper indentation
-
-```python
-def GetClientIp():
-    from flask import request
-    if request.remote_addr:
-        ipaddr = request.remote_addr.replace("::ffff:", "")
-        if not check_ip(ipaddr): return "Unknown IP address"
-        return ipaddr
-    return "Unknown IP address"
-```
-
-### 2. Re-enabled Middleware + Whitelist
-```python
-# Re-enable middleware
-wrap_apsess_middleware(app)
-
-# Add to public_paths in require_apsess():
-public_paths = (
-    '/a83a1c60/',
-    '/a83a1c60',
-    '/v2/a83a1c60/',
-    '/v2/a83a1c60',
-    # ... existing paths
-)
-```
-
-### 3. uri_match Regex Understanding
-The regex at line 512:
-```python
-uri_match = re.compile(
-    r"(^/static/[\w_\./\-]+.(js|css|png|jpg|gif|ico|svg|woff|woff2|ttf|otf|eot|map)$|^/[\w_\./\-]*$)"
-)
-```
-**Matches:** `/`, `/a83a1c60/`, `/login`, `/static/file.js`
-**Blocks:** `/api/test`, paths with special chars not in `\w_\./\-`
-
-This was NOT the cause of 404 in this case (admin path matched), but important to know.
-
-## Testing Commands
 ```bash
-# Test panel locally
-curl -k -s -o /dev/null -w '%{http_code}' https://localhost:26676/a83a1c60/
-
-# Test with token
-curl -k -s -o /dev/null -w '%{http_code}' https://localhost:26676/apsess_<token>/a83a1c60/
-
-# Check panel status
-ps aux | grep -E 'BT-Panel|webserver'
-ss -tlnp | grep 26676
+echo '/' > /www/server/panel/data/admin_path.pl
+chmod +x /www/server/panel/init.sh && /www/server/panel/init.sh restart
 ```
 
-## Key Files Modified
-1. `/www/server/panel/class/public/common.py` - Fixed GetClientIp
-2. `/www/server/panel/BTPanel/__init__.py` - Re-enabled middleware, added whitelist paths
+### If you genuinely need a hidden path
 
-## Lessons Learned (Aug 2026 Update)
-1. **Always check middleware first** when seeing 404 on valid routes
-2. **Check require_apsess() whitelist** for custom admin paths
-3. **Test with Flask test client** to isolate middleware vs routing issues
-4. **Check panel error logs** for AttributeError/500 errors
-5. **Middleware wraps WSGI app** - affects all requests before Flask routing
-6. **Disabling middleware is NOT enough** - request_check() still calls check_apsess_path()
-7. **System resource exhaustion** (load 151, mem 92%, swap 100%) can freeze VPS completely
-8. **Reboot via cloud provider panel** when SSH unresponsive
-9. **Docker cache cleanup** critical: 7GB in /var/lib/docker
-10. **Check bt.service status** - "exited" can be misleading (webserver may still run)
+Rewrite `PATH_INFO` in a WSGI middleware over `app.wsgi_app`, never in `@app.before_request`: Flask resolves the URL in `RequestContext.match_request()` during `ctx.push()`, *before* before_request handlers run, so mutating `request.path` there never changes which view is selected.
+
+```python
+class StripPrefixMiddleware:
+    def __init__(self, app, prefix):
+        self.app = app
+        self.prefix = (prefix or '').rstrip('/')
+
+    def __call__(self, environ, start_response):
+        path = environ.get('PATH_INFO', '')
+        if self.prefix and path.startswith(self.prefix + '/'):
+            environ['PATH_INFO'] = path[len(self.prefix):] or '/'
+        elif path == self.prefix:
+            environ['PATH_INFO'] = '/'
+        return self.app(environ, start_response)
+```
+
+## Browser-side causes (backend is healthy)
+
+Before editing server files, rule these out — they present identically to a backend fault.
+
+| Cause | Mechanism | Fix |
+|-------|-----------|-----|
+| **VPS rebooted** | Session secret = `os.uname()` + `psutil.boot_time()` + secret key. A reboot changes it → every existing session cookie and the `localStorage['apsess']` token are stale → blank / redirect loop | Test in incognito. If it renders, tell the user to clear site data + cookies |
+| **Stale `localStorage['apsess']`** | A malformed token fails `APSESS_PATH_RE`, so the prefixed URL is not rewritten and every API call 404s | Clear site data, or reload via a valid `/apsess_<token>/…` URL |
+| **Cached old bundle** | Old JS still points at a previous port/path | Hard reload (Ctrl+Shift+R) |
+
+**Decision rule:** if `curl` with a browser UA returns 200 for both URL shapes but the user still sees an empty dashboard, the fault is client state. Do not keep patching server files.
+
+## Instrumenting the real browser requests
+
+The panel's nginx access log is `/dev/null` by default. To see what the browser actually requests:
+
+```bash
+sed -i 's|access_log /dev/null;|access_log /www/wwwlogs/panel_access.log;|g' /www/server/panel/webserver/conf/webserver.conf
+chmod +x /www/server/panel/init.sh && /www/server/panel/init.sh restart
+```
+
+Note the config lives under `webserver/` (the panel's own nginx), not `nginx/`. If the file never appears, confirm the panel actually reloaded its webserver and that the directive landed inside the `server` block.
+
+## Pitfall: leaving an auth bypass in `local()`
+
+`/www/server/panel/class/common.py`'s `local()` is the per-request gate every panel route calls. A line such as:
+
+```python
+# Allow API requests to bypass local checks
+if request.path in ['/system', '/site', '/login'] or request.path.startswith('/system/') ...:
+    return None
+```
+
+is an injected backdoor exposing unauthenticated API access on a public port (stop services, read site lists). If you find one, scope it to loopback rather than leaving it open:
+
+```python
+if request.path in ['/system', '/site', '/login']:
+    if public.GetClientIp() in ('127.0.0.1', '::1'):
+        return None
+```
+
+Unpatched behaviour (correct) is a 302 redirect to `/login` for unauthenticated `/system` and `/site` requests.
+
+## Editing panel Python over SSH
+
+Multi-line insertion with `sed "${line}a\"` collapses into one line — the escaped newlines do not survive the remote shell, producing a syntax error and a panel that will not start. Write the edit as a script instead:
+
+```bash
+ssh ... "cat > /tmp/patch_panel.py << 'EOF'
+with open('/www/server/panel/BTPanel/__init__.py') as f:
+    lines = f.readlines()
+for i, line in enumerate(lines):
+    if 'ANCHOR_TEXT' in line:
+        lines.insert(i + 1, 'NEW LINE\n')
+        break
+with open('/www/server/panel/BTPanel/__init__.py', 'w') as f:
+    f.writelines(lines)
+EOF
+python3 /tmp/patch_panel.py && rm /tmp/patch_panel.py"
+```
+
+`python3 -c "<multi-line>"` also fails here: the command is re-quoted through `bash -c` and the newlines break it. Always a script file.
+
+Back up first (`cp BTPanel/__init__.py BTPanel/__init__.py.bak`) and verify after: `./pyenv/bin/python3 -c "import ast; ast.parse(open('BTPanel/__init__.py').read())"`.

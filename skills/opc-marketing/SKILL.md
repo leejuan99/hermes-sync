@@ -32,103 +32,160 @@ When an external service (e.g., Sejoli, WooCommerce, Shopify) sends a webhook on
 - **Secret handling** – Never embed the secret in a shell script that gets echoed; pass it directly via `--secret` to avoid interpolation or logging.
 - **Payload shape** – If the external service nests data under different keys, adjust the prompt accordingly; test with a sample payload first.
 - **Duplicate processing** – Hermes will process every verified request; ensure your prompt is idempotent or store processed IDs in memory (`hermes memory add …`) if needed.
+- **Webhook platform must be enabled first** – Before creating subscriptions, ensure `platforms.webhook.enabled: true` in config.yaml (or run `hermes config set platforms.webhook.enabled true` and `hermes gateway restart`). Otherwise `hermes webhook subscribe` fails with "Webhook platform is not enabled".
 
 ## 2. Creating Scheduled Agents for Repetitive Work
 
-For tasks that should run on a timetable (e.g., keyword research, ad performance checks, content generation), create a Hermes agent with a cron schedule.
+For tasks that should run on a timetable (e.g., keyword research, ad performance checks, content generation), create a Hermes **cron job** with an attached prompt/script. There is no `hermes agent create` command — agents are cron jobs that run prompts.
 
 ### Steps
 1. **Define goal, context, and prompt**.
    - Goal: short description.
    - Context: files, data, or notes the agent needs (e.g., product catalog, keyword list).
    - Prompt: detailed instructions, preferably requesting a structured output (JSON) if the result will be consumed by another step.
-2. **Create the agent**:
+2. **Store prompt in a file** (recommended for complex prompts) under `~/prompts/<agent-name>.txt`.
+3. **Create a wrapper script** in `~/.hermes/scripts/<agent-name>.py` that prints the prompt (required because `hermes cron create --script` only accepts scripts inside `~/.hermes/scripts/`).
+4. **Create the cron job**:
    ```
-   hermes agent create <agent-name> \
-     --goal "<short goal>" \
-     --context "<context>" \
-     --prompt "<detailed instructions>" \
-     --schedule "<cron-expression>" \
-     --on-success "<hermes kanban move <card-id> <column>>"
+   hermes cron create "<cron-expression>" \
+     --name <agent-name> \
+     --skill <skill-name> \
+     --script <agent-name>.py \
+     --deliver local
    ```
    - `--schedule` follows standard cron syntax (e.g., `0 9 * * *` for 09:00 daily).
-   - `--on-success` is optional; use it to automatically move a Kanban card when the agent finishes successfully.
-3. **Run manually** (if you don’t want a schedule):
+   - `--skill` loads the skill (and its references/) into the agent's context.
+   - `--script` points to a Python file in `~/.hermes/scripts/` that outputs the prompt to stdout.
+   - `--deliver local` sends output to the local session log (use `bot-chat:<profile>` for gateway delivery).
+5. **Run manually** for testing:
    ```
-   hermes agent run <agent-name>
+   hermes cron run <job-id>
    ```
-4. **Inspect logs** for debugging:
+6. **Inspect logs** for debugging:
    ```
-   tail -f ~/.hermes/logs/agent/<agent-name>.log
+   hermes cron runs <job-id>
    ```
 
 ### Pitfalls
 - **Vague prompts** lead to unpredictable outputs; always specify the exact format you expect (e.g., `"Output JSON: {\"keywords\":[{\"term\":\"...\",\"cpc\":0,…}]}"`).
-- **Missing context** – If the agent needs files that aren’t in its working directory, specify absolute paths or use `--workdir`.
+- **Missing context** – If the agent needs files that aren’t in its working directory, specify absolute paths in the prompt or use `--workdir` when creating the cron job.
 - **Overlapping schedules** – Ensure cron expressions don’t cause resource contention; stagger long‑running tasks.
+- **Scripts must live in ~/.hermes/scripts/** – `hermes cron create --script` rejects absolute or home-relative paths. Place wrapper scripts there and reference by filename only.
+- **No `hermes agent create` command** – The skill previously documented a non-existent command. Use `hermes cron create` with `--script` instead.
 
 ## 3. Linking Agents to a Kanban Board
 
 Use a Kanban board to visualize work items (e.g., “Create caption for AP‑1512HH”, “Review ad performance”). Each card can be moved by agents or manually.
 
 ### Steps
-1. **Initialize a board** for a division or project:
+1. **Create a board** (SQLite-backed, not JSON file):
    ```
-   mkdir -p ~/.hermes/kanban
-   cat > ~/.hermes/kanban/<division>.json <<'EOF'
-   {
-     "columns": ["Backlog","Ready","In Progress","Review","Done"],
-     "cards": []
-   }
-   EOF
+   hermes kanban boards create <board-slug>
+   hermes kanban boards switch <board-slug>
    ```
-2. **Add cards** manually or via agent `--on-success`:
-   - Manual: `hermes kanban create --title "Task title" --column Backlog --labels marketing`
-   - Agent: set `--on-success` to `hermes kanban move <card-id> <target-column>` where `<card-id>` is the card representing this task.
-3. **Move cards** based on progress:
+2. **Add cards** via `hermes kanban create` (no `--column` flag; cards start in `ready` status, assignee determines who picks them up):
    ```
-   hermes kanban move <card-id> <column>
+   hermes kanban create "Task title" --body "Task details" --assignee <profile-name>
    ```
-4. **Review** the board anytime:
+3. **Move cards** by changing assignee/status via dispatcher, or manually:
    ```
-   cat ~/.hermes/kanban/<division>.json
+   hermes kanban assign <task-id> <profile-name>
+   hermes kanban block <task-id> --reason "waiting on..."
+   hermes kanban complete <task-id> --summary "Done"
    ```
-   or use `hermes kanban show`.
+4. **Review** the board:
+   ```
+   hermes kanban list
+   hermes kanban show <task-id>
+   ```
 
 ### Pitfalls
-- **Non‑unique IDs** – If you generate card IDs yourself, use timestamps or UUIDs to avoid collisions.
-- **Malformed JSON** – A stray comma or missing bracket will break Kanban commands; validate with `python -m json.tool` before editing manually.
-- **Stale cards** – Periodically archive cards that have lingered too long in a column (use the Kanban‑Dispatcher bot or a cron job).
+- **No `--column` flag on `hermes kanban create`** – Cards are created with status `ready` and picked up by the dispatcher based on assignee. Column workflow is managed by the dispatcher, not manual column moves.
+- **Board is per-project, not per-division** – Use `hermes kanban boards create` for separate workstreams.
+- **Non‑unique IDs** – Let Hermes generate task IDs (e.g., `t_abc123`); don't invent your own.
+- **Stale cards** – Configure `kanban.failure_limit` and `kanban.dispatch_stale_timeout_seconds` in config.yaml; the dispatcher auto-blocks after repeated failures.
 
 ## 4. Watcher Agents for Service Health
 
-To catch downtime of external APIs (MCP servers, webhook endpoints, ad platforms), run a lightweight agent on a frequent schedule that alerts you via WhatsApp when something fails.
+To catch downtime of external APIs (MCP servers, webhook endpoints, ad platforms, gateway, VPS), run a lightweight cron job on a frequent schedule that alerts you via WhatsApp when something fails.
 
 ### Steps
-1. **Create a watcher agent**:
+1. **Create a watcher cron job** (same pattern as scheduled agents):
    ```
-   hermes agent create watcher-<service> \
-     --goal "Check health of <service>" \
-     --context "Endpoint URL and expected response" \
-     --prompt "Perform a GET/POST to the endpoint; if response code != 200 or body missing expected field, send a WhatsApp message to owner with details." \
-     --schedule "*/5 * * * *"
+   hermes cron create "*/5 * * * *" \
+     --name watcher-<service> \
+     --skill <skill-name> \
+     --script watcher_<service>.py \
+     --deliver bot-chat:default
    ```
-2. **Test** the agent manually first to ensure the prompt works and the alert is formatted correctly.
-3. **Monitor** the agent’s logs for false positives.
+   - Wrapper script in `~/.hermes/scripts/watcher_<service>.py` prints the monitoring prompt.
+   - `--deliver bot-chat:default` sends alerts to the gateway's default bot chat (WhatsApp/Telegram).
+2. **Prompt pattern for watchers**: include failure counter logic (only alert after N consecutive failures) and recovery notification.
+3. **Test** manually: `hermes cron run <job-id>`.
+4. **Monitor** logs: `hermes cron runs <job-id>`.
 
 ### Pitfalls
 - **Secret leakage** – Never put API keys or tokens directly in the prompt; store them in Hermes config (`hermes config set`) or memory and reference via variables if supported, or use the `--secret` flag where the tool accepts it.
 - **Alert fatigue** – Add throttling (e.g., only alert if failure persists for two consecutive checks) to avoid spamming your phone.
+- **Use memory for state** – Store failure counters and last-alert timestamps in Hermes memory (`memory` tool with `operations` batch) so state persists across cron runs.
+- **Gateway/WA bot watcher needs terminal access** – The watcher script can call `terminal` tool to run `hermes gateway status` and restart if needed.
 
 ## 5. Putting It All Together – Example Flow for a New Order
 
 1. **Sejoli** sends `order.completed` webhook to Hermes.
-2. Hermes validates the HMAC signature, extracts `customer_phone`, `customer_name`, `product_name`, `order_id`.
-3. The webhook subscription’s prompt runs:
-   - Sends a WhatsApp message: "Halo {customer_name}, terima kasih telah membeli {product_name}."
-   - Creates a Kanban card "Follow‑up WA – order #{{order_id}}" in column *To Do*.
-4. A **follow‑up agent** (scheduled or triggered by the card moving to *In Progress*) sends a second message after 2 days asking for feedback or offering a complementary product.
-5. An **analytics watcher** runs every 30 minutes, checks Meta Ads CPC/ROI, and sends a WhatsApp alert if CPC rises >20 % or ROI <1.5.
-6. A **content‑edu agent** runs each morning to generate an educational infographic and caption, which you can broadcast via WhatsApp blast.
+2. Hermes validates the HMAC signature, extracts `customer_phone`, `customer_name`, `product_name`, `order_id`, `amount`.
+3. The webhook subscription's prompt runs (with `smartmillionaire-marketing` skill loaded):
+   - Sends a WhatsApp welcome message using template from skill references.
+   - Creates a Kanban task `Follow-up WA – Order #{order_id}` with assignee `followup-agent` and body containing customer details.
+   - Logs to Novamira CRM via MCP (`create_contact`, `add_tag`, `log_activity`).
+   - Stores deduplication key in memory: `lead:{order_id}`.
+4. **followup-agent** (cron `0 10 * * *`) picks up due tasks, sends staged follow-ups (D+2, D+7, D+30, D+60, D+90), updates task metadata, moves cold leads to `Cold` column.
+5. **ads-performance-agent** (cron `*/30 9-18 * * 1-5` + daily `0 21 * * *` + weekly `0 7 * * 1`) monitors Meta Ads, alerts on CPC/CTR/ROAS anomalies, creates `Refresh Creative` tasks when frequency > 3.5.
+6. **content-edu-agent** (cron `0 7 * * *`) generates daily educational content (image prompt + WA caption), creates `Content Pipeline` tasks for review.
+7. **Three infrastructure watchers** (webhook, gateway/WA, VPS) run every 5/10/60 minutes, alert on failure with auto-recovery attempts.
 
-By combining webhook‑triggered actions, scheduled agents, Kanban tracking, and watcher bots, a single operator can run a fully automated marketing and sales pipeline with minimal manual intervention.
+By combining webhook‑triggered actions, scheduled cron jobs, Kanban task queue, and watcher bots, a single operator can run a fully automated marketing and sales pipeline with minimal manual intervention.
+
+## 6. Skill Structure for Domain Context
+
+Create a **domain skill** (e.g., `smartmillionaire-marketing`) to hold all reusable assets:
+
+```
+<skill-name>/
+├── SKILL.md                    # This file's pattern
+├── references/
+│   ├── products.json           # Product catalog with prices, links, upsell map
+│   ├── templates.md            # WA message templates with variables
+│   ├── keywords.txt            # Keyword research history + negative keywords
+│   └── faq.md                  # Comprehensive FAQ + quick responses
+├── scripts/                    # Optional: image generation, etc.
+└── prompts/                    # Agent prompts (in ~/prompts/)
+    ├── lead-intake.txt
+    ├── followup.txt
+    ├── content-edu.txt
+    ├── ads-performance.txt
+    ├── watcher-webhook.txt
+    ├── watcher-gateway.txt
+    └── watcher-infra.txt
+```
+
+Load in cron jobs via `--skill <skill-name>`. The skill's `references/` files are available to the agent as context.
+
+### Memory Keys Pattern
+Use consistent memory keys for cross-agent state:
+- `lead:{order_id}` – deduplication for lead intake
+- `lead:{customer_phone}:{product_name}` – alternative dedup key
+- `customer:{phone}` – customer profile (name, orders, segment, preferences)
+- `webhook_check:{timestamp}` – webhook health log
+- `gateway_check:{timestamp}` – gateway/WA bot health log
+- `vps_check:{timestamp}` – VPS infrastructure health log
+- `content:{date}` – generated content metadata
+- `ads:benchmarks` – 7-day rolling benchmarks for anomaly detection
+
+### User Tone & Style (This User)
+- **Language**: Casual Indonesian (bray, lo/gua, gass, susah njir)
+- **Tone**: Warm, helpful, credible, NOT salesy
+- **Emoji**: 1-2 per message, natural
+- **Length**: Max 1600 chars per WA (1 segment)
+- **CTA**: Soft, value-first, link at bottom
+- **Prefers GUI over CLI** – Default to `hermes dashboard` for monitoring, not terminal logs.

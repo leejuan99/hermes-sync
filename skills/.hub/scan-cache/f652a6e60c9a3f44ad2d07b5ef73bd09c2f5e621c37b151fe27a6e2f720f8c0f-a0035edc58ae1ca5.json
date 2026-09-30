@@ -1,0 +1,44 @@
+{
+  "bundle_hash": "sha256:f652a6e60c9a3f44ad2d07b5ef73bd09c2f5e621c37b151fe27a6e2f720f8c0f",
+  "scanner_version": "skills-guard-v6",
+  "source": "@bigbubbaagent-bot/miro-mcp",
+  "source_url": "@bigbubbaagent-bot/miro-mcp",
+  "verdict": "dangerous",
+  "trust_level": "community",
+  "findings": [
+    {
+      "pattern_id": "unpinned_npm_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "skill-card.md",
+      "line": 28,
+      "match": "Risk: Using the optional MCP Inspector as a global npm install can broaden local debugging exposure.",
+      "description": "npm install without version pinning"
+    },
+    {
+      "pattern_id": "env_exfil_curl",
+      "severity": "critical",
+      "category": "exfiltration",
+      "file": "SKILL.md",
+      "line": 179,
+      "match": "curl -H \"Authorization: Bearer $ACCESS_TOKEN\" https://api.miro.com/v2/...",
+      "description": "curl command interpolating secret environment variable"
+    },
+    {
+      "pattern_id": "unpinned_npm_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "references\\mcp-connection.md",
+      "line": 224,
+      "match": "npm install -g @modelcontextprotocol/inspector",
+      "description": "npm install without version pinning"
+    }
+  ],
+  "rules": [
+    "env_exfil_curl",
+    "unpinned_npm_install"
+  ],
+  "scanned_at": "2026-09-27T08:28:22.469975+00:00",
+  "summary": "miro-mcp: dangerous \u2014 3 finding(s) in exfiltration, supply_chain",
+  "fresh": true
+}

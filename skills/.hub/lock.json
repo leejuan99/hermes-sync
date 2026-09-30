@@ -268,6 +268,110 @@
       },
       "installed_at": "2026-09-26T11:30:10.259973+00:00",
       "updated_at": "2026-09-26T11:30:10.259973+00:00"
+    },
+    "design-md": {
+      "source": "skills.sh",
+      "identifier": "skills-sh/NousResearch/hermes-agent/skills/creative/design-md",
+      "trust_level": "community",
+      "scan_verdict": "safe",
+      "content_hash": "sha256:4a0a7a757630dc24",
+      "install_path": "design-md",
+      "files": [
+        "SKILL.md",
+        "templates/starter.md"
+      ],
+      "metadata": {
+        "source_url": "https://github.com/NousResearch/hermes-agent/tree/68fa7e9f840d24c72774508cc4dc99e8fcceb26f/skills/creative/design-md",
+        "source_revision": "68fa7e9f840d24c72774508cc4dc99e8fcceb26f",
+        "detail_url": "https://skills.sh/NousResearch/hermes-agent/skills/creative/design-md",
+        "repo_url": "https://github.com/NousResearch/hermes-agent"
+      },
+      "scan_provenance": {
+        "bundle_hash": "sha256:4a0a7a757630dc24afbea23e7adc2637d64192fcecf9228d28d3819ae698655e",
+        "scanner_version": "skills-guard-v6",
+        "source": "skills-sh/NousResearch/hermes-agent/skills/creative/design-md",
+        "source_url": "https://github.com/NousResearch/hermes-agent/tree/68fa7e9f840d24c72774508cc4dc99e8fcceb26f/skills/creative/design-md",
+        "verdict": "safe",
+        "trust_level": "community",
+        "findings": [],
+        "rules": [],
+        "scanned_at": "2026-09-28T04:52:31.780496+00:00",
+        "summary": "design-md: clean scan, no threats detected",
+        "fresh": true
+      },
+      "installed_at": "2026-09-28T04:52:31.814906+00:00",
+      "updated_at": "2026-09-28T04:52:31.814906+00:00"
+    },
+    "watchers": {
+      "source": "official",
+      "identifier": "official/devops/watchers",
+      "trust_level": "builtin",
+      "scan_verdict": "safe",
+      "content_hash": "sha256:2227eb76b474cc11",
+      "install_path": "devops/watchers",
+      "files": [
+        "SKILL.md",
+        "scripts\\watch_github.py",
+        "scripts\\watch_http_json.py",
+        "scripts\\watch_rss.py",
+        "scripts\\_watermark.py"
+      ],
+      "metadata": {},
+      "scan_provenance": {
+        "bundle_hash": "sha256:2227eb76b474cc11f05d4517f848600eda45b88bbe67f30ada9b2bcd31ccb7eb",
+        "scanner_version": "skills-guard-v6",
+        "source": "official",
+        "source_url": "official/devops/watchers",
+        "verdict": "safe",
+        "trust_level": "builtin",
+        "findings": [
+          {
+            "pattern_id": "python_environ_get_secret",
+            "severity": "medium",
+            "category": "exfiltration",
+            "file": "scripts\\watch_github.py",
+            "line": 118,
+            "match": "token = os.environ.get(\"GITHUB_TOKEN\") or os.environ.get(\"GH_TOKEN\")",
+            "description": "reads secret via os.environ.get() (normal API-key access; informational)"
+          }
+        ],
+        "rules": [
+          "python_environ_get_secret"
+        ],
+        "scanned_at": "2026-09-29T14:41:50.691331+00:00",
+        "summary": "watchers: safe — 1 finding(s) in exfiltration",
+        "fresh": true
+      },
+      "installed_at": "2026-09-29T14:41:50.710225+00:00",
+      "updated_at": "2026-09-29T14:41:50.710225+00:00"
+    },
+    "rss-feeds": {
+      "source": "official",
+      "identifier": "official/research/rss-feeds",
+      "trust_level": "builtin",
+      "scan_verdict": "safe",
+      "content_hash": "sha256:10674c52ae6ca2f6",
+      "install_path": "research/rss-feeds",
+      "files": [
+        "SKILL.md",
+        "scripts\\feed.py"
+      ],
+      "metadata": {},
+      "scan_provenance": {
+        "bundle_hash": "sha256:10674c52ae6ca2f6eed183ab5aefc33fcc0d0a89e5f7d0638951c14f7f6a792c",
+        "scanner_version": "skills-guard-v6",
+        "source": "official",
+        "source_url": "official/research/rss-feeds",
+        "verdict": "safe",
+        "trust_level": "builtin",
+        "findings": [],
+        "rules": [],
+        "scanned_at": "2026-09-29T14:42:06.168448+00:00",
+        "summary": "rss-feeds: clean scan, no threats detected",
+        "fresh": true
+      },
+      "installed_at": "2026-09-29T14:42:06.184959+00:00",
+      "updated_at": "2026-09-29T14:42:06.184959+00:00"
     }
   }
 }

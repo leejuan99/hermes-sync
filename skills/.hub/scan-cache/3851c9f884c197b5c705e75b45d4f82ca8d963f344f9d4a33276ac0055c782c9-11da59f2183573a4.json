@@ -1,0 +1,35 @@
+{
+  "bundle_hash": "sha256:3851c9f884c197b5c705e75b45d4f82ca8d963f344f9d4a33276ac0055c782c9",
+  "scanner_version": "skills-guard-v6",
+  "source": "@oomol/oo-miro",
+  "source_url": "@oomol/oo-miro",
+  "verdict": "dangerous",
+  "trust_level": "community",
+  "findings": [
+    {
+      "pattern_id": "curl_pipe_shell",
+      "severity": "critical",
+      "category": "supply_chain",
+      "file": "SKILL.md",
+      "line": 66,
+      "match": "curl -fsSL https://cli.oomol.com/install.sh | bash    # macOS / Linux",
+      "description": "curl piped to shell (download-and-execute)"
+    },
+    {
+      "pattern_id": "allowed_tools_field",
+      "severity": "low",
+      "category": "privilege_escalation",
+      "file": "SKILL.md",
+      "line": 4,
+      "match": "allowed-tools: [Bash(oo *)]",
+      "description": "skill declares allowed-tools (standard frontmatter; informational)"
+    }
+  ],
+  "rules": [
+    "allowed_tools_field",
+    "curl_pipe_shell"
+  ],
+  "scanned_at": "2026-09-27T08:27:12.533522+00:00",
+  "summary": "oo-miro: dangerous \u2014 2 finding(s) in privilege_escalation, supply_chain",
+  "fresh": true
+}

@@ -1,11 +1,38 @@
-# Hermes files to sync
-!memories/
-!skills/
-!plugins/
-!config.yaml
-!*.md
+# ═══════════════════════════════════════════════════════════════
+#  HERMES SYNC — hanya KONTEN yang disync ke VPS
+#  Aturan: desktop & VPS harus punya isi yang SAMA PERSIS
+# ═══════════════════════════════════════════════════════════════
 
-# Ignore everything else
+# --- 1. Abaikan semuanya dulu ---
 *
+
+# --- 2. Biarkan git masuk ke direktori ---
 !*/
+
+# --- 3. YANG DISYNC (konten identik di semua mesin) ---
 !.gitignore
+!SOUL.md
+!skills/**
+!memories/**
+!marketing/**
+!prompts/**
+
+# --- 4. SPESIFIK MESIN — JANGAN PERNAH disync ---
+config.yaml
+.env
+.env.*
+node/
+tools/
+cache/
+logs/
+installs/
+cron/
+backups/
+attachments/
+audio_cache/
+sessions/
+*.db
+*.db-wal
+*.db-shm
+*.lock
+*.log

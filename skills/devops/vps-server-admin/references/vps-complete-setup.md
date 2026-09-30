@@ -74,22 +74,17 @@ systemctl restart sshd
 
 ### 3. aaPanel Configuration
 
-#### Fix 404 Issue (APSESS Middleware)
-**Root Cause:** APSESS middleware requires `apsess_<token>/` prefix
+#### Fix 404 / blank dashboard (APSESS middleware)
+**Root Cause:** the frontend prepends `/apsess_<token>/` to every API call. The middleware is **not** an access gate — tokenless paths pass straight through.
 
-**Fix Options:**
-1. Access with token: `https://domain:26676/apsess_<token>/admin_path/`
-2. Disable middleware: Comment `wrap_apsess_middleware(app)` in `/www/server/panel/BTPanel/__init__.py`
-3. Add to whitelist in `require_apsess()`:
-```python
-public_paths = (
-    '/a83a1c60/',
-    '/a83a1c60',
-    '/v2/a83a1c60/',
-    '/v2/a83a1c60',
-    # ... existing paths
-)
+**Do NOT disable `wrap_apsess_middleware(app)`.** Commenting it out 404s every API call and blanks the dashboard, and it hides the real cause. Keep it enabled and set `admin_path` back to `/`:
+
+```bash
+echo '/' > /www/server/panel/data/admin_path.pl
+chmod +x /www/server/panel/init.sh && /www/server/panel/init.sh restart
 ```
+
+See SKILL.md → "aaPanel Blank Dashboard / 404 — Start Here".
 
 #### Fix GetClientIp Syntax Error
 ```bash
@@ -152,7 +147,7 @@ curl -X POST 'https://n8n.domain.com/api/v1/workflows/<ID>/activate' \
 #### Create Bot
 1. Message `@BotFather` on Telegram
 2. `/newbot` → follow prompts
-3. Save **Bot Token**: `8871187293:AAGk2B5LI64z9xlxmBi3zXG0EQnJwZIKI3Y`
+3. Save the **Bot Token** (`<BOT_TOKEN>`) — keep it out of files that get committed or synced; read it from the environment or a 600-mode file instead
 
 #### Get Chat ID
 ```bash
@@ -208,21 +203,47 @@ crontab -e
 ```
 
 #### Backup Script (/root/backup_db.sh)
+
+Credentials live in `/root/.my.cnf` (mode 600), never inline in the script: an inline `-p<password>` keeps "working" while producing nothing once the DB password rotates, and `2>/dev/null` hides the auth error.
+
+```bash
+cat > /root/.my.cnf <<'EOF'
+[client]
+user=root
+password=<DB_ROOT_PASSWORD>
+EOF
+chmod 600 /root/.my.cnf
+```
+
 ```bash
 #!/bin/bash
+set -u
 DATE=$(date +%F_%H-%M)
 BACKUP_DIR="/root/backups"
-mkdir -p ${BACKUP_DIR}
+mkdir -p "$BACKUP_DIR"
+OUT="$BACKUP_DIR/all_dbs_${DATE}.sql.gz"
 
-mysqldump -u root -pRootPass123!@# --all-databases --single-transaction --routines --triggers 2>/dev/null | gzip > ${BACKUP_DIR}/all_dbs_${DATE}.sql.gz
+mysqldump --defaults-extra-file=/root/.my.cnf \
+  --all-databases --single-transaction --routines --triggers --events \
+  2>/dev/null | gzip > "$OUT"
 
-find ${BACKUP_DIR} -name "all_dbs_*.sql.gz" -mtime +7 -delete
+if [ -s "$OUT" ]; then
+  SIZE=$(du -h "$OUT" | cut -f1)
+  find "$BACKUP_DIR" -name "all_dbs_*.sql.gz" -mtime +7 -delete
+  [ -x /root/telegram_notify.sh ] && /root/telegram_notify.sh "Backup DB sukses ${DATE} (${SIZE})" >/dev/null 2>&1
+  echo "OK: $OUT ($SIZE)"
+else
+  rm -f "$OUT"
+  [ -x /root/telegram_notify.sh ] && /root/telegram_notify.sh "Backup DB GAGAL ${DATE}" >/dev/null 2>&1
+  echo "FAILED"; exit 1
+fi
+```
 
-/root/telegram_notify.sh "✅ Backup Database Selesai
-📅 $(date)
-📦 File: all_dbs_${DATE}.sql.gz
-💾 Size: $(du -h ${BACKUP_DIR}/all_dbs_${DATE}.sql.gz | cut -f1)
-📂 Lokasi: ${BACKUP_DIR}/"
+Prove it once by hand, then validate the payload — the file existing is not enough:
+
+```bash
+/root/backup_db.sh
+zcat /root/backups/all_dbs_*.sql.gz | grep -c 'CREATE DATABASE'   # should equal the DB count on the server
 ```
 
 #### Health Check Script (/root/health_check.sh)
@@ -249,8 +270,9 @@ MSG="📊 Server Health Check
 #### Telegram Notify Script (/root/telegram_notify.sh)
 ```bash
 #!/bin/bash
-BOT_TOKEN="8871187293:AAGk2B5LI64z9xlxmBi3zXG0EQnJwZIKI3Y"
-CHAT_ID="316228407"
+# source the secret instead of embedding it: set -a; . /root/.telegram.env; set +a
+BOT_TOKEN="${TELEGRAM_BOT_TOKEN:?missing}"
+CHAT_ID="${TELEGRAM_CHAT_ID:?missing}"
 MESSAGE="$1"
 
 curl -s -X POST "https://api.telegram.org/bot${BOT_TOKEN}/sendMessage" \
