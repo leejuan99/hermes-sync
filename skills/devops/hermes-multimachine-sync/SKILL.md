@@ -73,6 +73,54 @@ Three things have to travel, and only two of them are files you can commit:
 Symptom that means you missed this: the desktop's MCP tools work, the remote's do not, and the
 remote's `hermes mcp list` shows no servers or an empty tool set.
 
+## The model is not where you set it
+
+`hermes config set model.default X` sets the default for **new** sessions only. Three other layers
+out-pin it, and a bot that ignores your change is sitting on one of them:
+
+| Layer | Stored in | Rewritten by |
+|---|---|---|
+| Per-session model | `state.db` (SQLite) → `sessions.model` | every model pick |
+| Per-session override | `sessions.json` → `<session>.model_override` | the platform's `/model` command |
+| Per-job pin | `cron/jobs.json` → `model_snapshot` | at job creation |
+
+Editing `sessions.json` alone changes nothing — `state.db` is what the gateway reads back. Clear all
+three, restart, then re-read `state.db`: if the model reverted, the user is switching it live from
+the chat `/model` menu and that write wins over yours. Full recipe: `references/model-routing.md`.
+
+**A chat platform's `/model` menu can break a bot that was working.** The menu lists Hermes' *built-in*
+providers, and the free tiers fail (`HTTP 500`, `400 Model is unavailable`) while silently overwriting
+the operator's setting. When a bot errors right after it was fine, read the session's model out of
+`state.db` before investigating anything else.
+
+**A headless host cannot run a desktop-only provider.** A provider defined in the desktop's
+`config.yaml` / `.env` (custom `base_url` + `<X>_API_KEY`) is not "unreadable" on the runtime host —
+it was never transferred, because those two files are machine-local by design. Confirm with
+`hermes config get providers` (empty means built-ins only) and say plainly that the provider was never
+installed there, instead of hunting a parsing bug.
+
+**Drop stale proxy overrides before blaming the network.** If `model.base_url` points at a local proxy
+that is down, every call fails at the provider layer:
+
+```bash
+hermes config unset model.base_url
+hermes config unset model.api_key
+```
+
+That hands control back to the provider's real endpoint and the key in `.env`.
+
+## Diagnosing the runtime host
+
+- **Never `grep -r` across `~/.hermes`.** It holds multi-megabyte caches
+  (`models_dev_cache.json`, `cache/openrouter_model_metadata.json`) and a live SQLite `state.db` plus
+  WAL, so a recursive search both hangs and lies: a model id that merely appears in a catalogue dump
+  gets read as a configured setting. Name the file you suspect, or query `state.db` with SQL.
+- A setting lives in exactly four places — `config.yaml`, `sessions/sessions.json`,
+  `cron/jobs.json`, `state.db`. Search those, not the tree.
+- Tool schemas can dominate the request. A host with a large MCP server carries ~150k tokens of
+deferred tool schemas (`tool_search activated (tier 1): N deferred (~X tokens)`), which shows up as
+double-digit-second latencies and slow cold starts. Check that line before blaming the model.
+
 ## Repo shape
 
 A private GitHub repo, one branch. Portal-based `hermes sync` requires a Portal login; the git
@@ -127,6 +175,16 @@ first — otherwise `systemctl --user` cannot find the bus and the restart silen
 WhatsApp (Baileys) credentials are device-bound: copying `whatsapp/session/` to another host and
 starting there yields `Logged out`, and it breaks the pairing on the original. Re-pair with the QR
 flow on whichever host is the runtime. Assume the same for any per-device OAuth session.
+
+## Reporting to this user
+
+Lead with the result, then at most one table. Do **not** restate the same findings once in prose and
+again in a status table — this user reads that as "double" (repetitive) and calls it wasteful
+("boros"), and has asked for it to stop. Skip the recap section entirely when the answer is one line.
+
+Long answers also cost real money once the runtime host runs a paid model, so brevity is a budget
+rule here, not just a style one. When you change the model, state the per-million token price and the
+one-line revert command in the same breath.
 
 ## Verify
 

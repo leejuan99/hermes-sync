@@ -30,7 +30,11 @@ Run `scripts/probe_mcp_endpoint.sh <url>`. It sends `initialize`, prints the
   header names the discovery document. Fetch it, then the authorization-server
   metadata: you need `authorization_endpoint`, `token_endpoint`, `scopes_supported`,
   and whether `registration_endpoint` exists (that decides step 3).
-- **`405`/`404`** — probably not a streamable-HTTP endpoint, or the path is wrong.
+- **`405`, typically with `Allow: POST`** — the endpoint is *alive*. MCP is POST-only JSON-RPC, so a
+  `GET` is rejected (`MCP endpoints accept POST for JSON-RPC; GET is not supported`). Re-probe with a
+  POST before concluding anything: treating a GET's 405 as "the server is down" starts a hunt for an
+  outage that is not happening. `scripts/probe_mcp_endpoint.sh` already sends `initialize` over POST.
+- **`404`** — the path really is wrong, or this host serves MCP elsewhere.
 
 ### 2. Add the server
 
@@ -90,6 +94,10 @@ problem, not a config problem. Do this before telling the user it is set up.
   the credentials are fine and the difference is in Hermes' transport request
   (headers, `Accept`, protocol version). Compare the two requests before changing any
   auth config.
+- **A tool call that returns data is the only proof of health.** When someone reports an MCP server is
+  "not working", find out whether a real tool call ever returned rows. If it did, the transport, auth
+  and any SDK patch are all fine and the fault is in the interpretation of the result — do not reopen
+  the setup. Probe the tool, not the URL.
 - **The provider still has to allowlist the redirect URI.** Hermes defaults to
   `http://<redirect_host or 127.0.0.1>:<port>/callback`; pin it with
   `oauth.redirect_host` / `oauth.redirect_port`. Check it *before* starting a browser

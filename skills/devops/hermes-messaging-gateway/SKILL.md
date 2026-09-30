@@ -64,15 +64,6 @@ Connect and debug Hermes gateway chat platforms from the desktop app.
 5. Set webhook URL: `hermes config set telegram.webhook_url https://<domain>/webhooks/telegram`
 6. Verify bot responds: send a message to the bot and check logs with `hermes logs | grep -i telegram`
 
-## Telegram Platform Setup and Marketing Automation
-
-1. Install Telegram messaging skill: `hermes skills install clawhub/telegram-messaging --yes`
-2. Enable the plugin: `hermes config set plugins.enabled '["telegram-business"]'` (adjust if skill name differs)
-3. Restart gateway: `hermes gateway restart`
-4. Set Telegram bot token: `hermes config set telegram.token <token>`
-5. Set webhook URL: `hermes config set telegram.webhook_url https://<domain>/webhooks/telegram`
-6. Verify bot responds: send a message to the bot and check logs with `hermes logs | grep -i telegram`
-
 ## Telegram Polling Conflict Resolution
 
 When getting `Conflict: terminated by other getUpdates request; make sure that only one bot instance is running`:
@@ -117,6 +108,28 @@ journalctl -u hermes-gateway -f
 # Gateway running with 1 platform(s)
 # Telegram menu: 60 commands registered
 ```
+
+## The bot answers with the wrong model
+
+`config.yaml`'s `model.default` is only the default for *new* sessions. Three independent pins decide
+what a live bot actually uses:
+
+| Pin | Where | Rewritten by |
+|---|---|---|
+| Session model | `state.db` → `sessions.model` | every model pick |
+| Session override | `sessions.json` → `model_override` | the chat `/model` command |
+| Per-job pin | `cron/jobs.json` → `model_snapshot` | at job creation |
+
+So a bot can keep answering on the old model after `hermes config set model.default ...`, and editing
+`sessions.json` alone does nothing because `state.db` is what the gateway reads back.
+
+The chat `/model` menu is also a trap: it lists Hermes' *built-in* providers, so a user selecting a
+`*-free` entry can silently override a working setup with one that answers `HTTP 500` or
+`400 Model is unavailable`. When a bot that was fine starts erroring, read `sessions.model` out of
+`state.db` before touching any config — and never `grep -r` the Hermes home to find it, since its
+multi-megabyte caches return model ids that only *look* like settings.
+
+Full clear-and-restart recipe: `hermes-multimachine-sync` → `references/model-routing.md`.
 
 ## Marketing Automation Bots (Cron Jobs)
 
