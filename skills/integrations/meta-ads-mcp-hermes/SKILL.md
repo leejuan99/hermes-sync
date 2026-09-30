@@ -31,6 +31,9 @@ things that stop it working out of the box: Meta refuses dynamic client registra
 | `Dynamic registration is not available for this client` | Meta only allows DCR for validated clients (Claude, ChatGPT, Codex, Cursor). Must use your own Meta app as a static OAuth client. |
 | `HTTP 400 from POST .../ads` on every request, curl with the same token returns 200 | mcp SDK ≥ 2.0 writes `"_meta": {}` into JSON-RPC params. Meta answers `-32602 "meta" for Request must be an dict or null.` |
 | `401 Authentication Required` | No token, or the token expired (user tokens live ~1-2h unless exchanged; the OAuth flow mints a ~60-day one). |
+| `OAuthNonInteractiveError: MCP OAuth requires browser authorization but no interactive session is available` | The gateway runs headless (systemd/cron) and cannot open a browser. Mint the tokens once with `hermes mcp login <name>` in a **PTY** (`ssh -t`), then restart the gateway — it only needs the tokens the flow writes. |
+| `configured OAuth client changed (client_id 'X' -> 'X')` and a re-auth loop on every restart | `oauth.client_secret` in `config.yaml` differs from `client_secret` in `~/.hermes/mcp-tokens/<name>.client.json`. Hermes **deletes the tokens on every start** when they disagree (the client_id looks unchanged, so the log is misleading). Align the two and the loop stops. |
+| Works on the laptop, HTTP 400 on a headless VPS/Linux box | The server install keeps its venv **outside** `HERMES_HOME` (`/usr/local/lib/hermes-agent/venv`), so the `_meta` patch is missing there. `targets()` must also glob `sys.prefix` / `/usr/local/lib/hermes-agent`. |
 
 ## Setup
 

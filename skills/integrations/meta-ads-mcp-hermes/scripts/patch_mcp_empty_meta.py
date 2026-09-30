@@ -66,6 +66,13 @@ def targets(root: Path) -> list[Path]:
     for extra in (root / "cache",):
         if extra.is_dir():
             found.extend(p for p in extra.glob("**/mcp/shared/jsonrpc_dispatcher.py") if p.is_file())
+    # Linux/system installs keep the venv OUTSIDE HERMES_HOME (e.g.
+    # /usr/local/lib/hermes-agent/venv). Without these the script reports nothing to do
+    # while the gateway keeps failing with HTTP 400 from Meta.
+    for base in (Path("/usr/local/lib/hermes-agent"), Path(sys.prefix), Path(sys.base_prefix)):
+        if not base.is_dir():
+            continue
+        found.extend(p for p in base.glob("**/site-packages/mcp/shared/jsonrpc_dispatcher.py") if p.is_file())
     seen, unique = set(), []
     for path in found:
         key = str(path).lower()
