@@ -1,0 +1,54 @@
+{
+  "brand": "Smart Millionaire",
+  "distributor_of": "Coway Indonesia",
+  "products": [
+    {
+      "id": "ap1512hh",
+      "name": "Coway AP-1512HH Mighty",
+      "price_idr": 3500000,
+      "coverage_m2": 36,
+      "category": "flagship",
+      "filters": ["Pre-filter", "HEPA", "Deodorization", "Vital Ion"],
+      "highlights": ["HEPA menangkap 99.97% partikel 0.3 mikron", "Ada Vital Ion", "Mode Auto & Eco", "Indikator kualitas udara"],
+      "warranty_years": 2,
+      "ideal_room": "Ruang keluarga / ruang kerja 30-36 m2",
+      "content_angles": ["all-rounder keluarga", "harga menengah fitur lengkap", "cocok open plan"],
+      "link": "https://smartmillionaire.co.id/produk/coway-ap-1512hh"
+    },
+    {
+      "id": "ap1216l",
+      "name": "Coway AP-1216L",
+      "price_idr": 2800000,
+      "coverage_m2": 26,
+      "category": "bedroom",
+      "filters": ["Pre-filter", "HEPA", "Deodorization"],
+      "highlights": ["Mode tidur senyap ~20dB", "TANPA ionizer - aman untuk yang sensitif", "Kompresi ringkas", "Hemat listrik"],
+      "warranty_years": 2,
+      "ideal_room": "Kamar tidur 20-26 m2",
+      "content_angles": ["kualitas tidur", "senyap untuk anak/bayi", "tanpa ionizer"],
+      "link": "https://smartmillionaire.co.id/produk/coway-ap-1216l"
+    },
+    {
+      "id": "ap1019c",
+      "name": "Coway AP-1019C",
+      "price_idr": 4200000,
+      "coverage_m2": 45,
+      "category": "livingroom",
+      "filters": ["Pre-filter", "Double HEPA", "Deodorization", "Vital Ion"],
+      "highlights": ["Double HEPA - filtrasi maksimal", "Coverage besar 45 m2", "Sensor pintar", "Child lock"],
+      "warranty_years": 2,
+      "ideal_room": "Ruang tamu besar 40-45 m2",
+      "content_angles": ["ruang tamu luas", "premium", "keluarga besar"],
+      "link": "https://smartmillionaire.co.id/produk/coway-ap-1019c"
+    }
+  ],
+  "filters": [
+    {"for": "ap1512hh", "price_idr": 450000, "interval_months": 12},
+    {"for": "ap1216l", "price_idr": 380000, "interval_months": 12},
+    {"for": "ap1019c", "price_idr": 550000, "interval_months": 12}
+  ],
+  "claims_rules": {
+    "banned": ["menyembuhkan asma", "membunuh semua virus", "100% bebas polusi", "dijamin sembuh"],
+    "safe": ["membantu mengurangi paparan alergen di udara", "menyaring partikel hingga 0.3 mikron", "mendukung kualitas udara dalam ruangan"]
+  }
+}
