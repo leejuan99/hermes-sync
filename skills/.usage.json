@@ -123,13 +123,15 @@
     "created_at": "2026-07-03T04:20:14.412808+00:00",
     "created_by": null,
     "last_patched_at": null,
-    "last_used_at": "2026-07-03T04:20:14.417812+00:00",
-    "last_viewed_at": "2026-07-03T04:20:14.412808+00:00",
+    "last_reused_patch_generation": 0,
+    "last_used_at": "2026-09-30T05:32:30.026682+00:00",
+    "last_viewed_at": "2026-09-30T05:32:30.019984+00:00",
     "patch_count": 0,
+    "patch_generation": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 1,
-    "view_count": 1
+    "use_count": 2,
+    "view_count": 2
   },
   "baoyu-infographic": {
     "archived_at": "2026-09-16T07:33:35.007256+00:00",
@@ -692,6 +694,22 @@
     "state": "active",
     "use_count": 0,
     "view_count": 0
+  },
+  "hermes-mcp-server-setup": {
+    "archived_at": null,
+    "created_at": "2026-09-30T05:43:50.891783+00:00",
+    "created_by": "agent",
+    "first_seen_at": null,
+    "last_patched_at": "2026-09-30T05:43:51.192954+00:00",
+    "last_reused_patch_generation": 0,
+    "last_used_at": "2026-09-30T05:44:34.698831+00:00",
+    "last_viewed_at": "2026-09-30T05:44:34.692160+00:00",
+    "patch_count": 2,
+    "patch_generation": 2,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 1
   },
   "hermes-messaging-gateway": {
     "archived_at": null,
