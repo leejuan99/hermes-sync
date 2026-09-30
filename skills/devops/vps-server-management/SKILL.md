@@ -90,13 +90,13 @@ chown -R 1000:1000 /var/lib/docker/volumes/<new_volume>/_data
 | **aaPanel service "exited"** | bt.service shows "active (exited)" but webserver processes still running | `systemctl start bt` — service status misleading, processes alive |
 | **aaPanel blank dashboard / 404 on admin path** | The frontend calls every API as `/apsess_<token>/...`; `ApsessPathMiddleware` rewrites that prefix at the WSGI level. It is **not** an access gate — tokenless paths pass straight through. Commenting it out 404s every API call and blanks the dashboard. A non-root `admin_path` also breaks it, since the frontend's API calls are root-relative | **Fix:** keep `wrap_apsess_middleware(app)` ENABLED and set `echo '/' > /www/server/panel/data/admin_path.pl` then restart. Probe with a browser User-Agent or `is_spider()` returns misleading 404s. If both `/system` and `/apsess_x/system` return 200 but the browser is still empty, it is client state (see `references/aapanel-apsess-404-fix.md`) |
 | **Novamira tirith-install spam** | Plugin creates ~1500 dirs in `/tmp` (8.5MB each) daily | Cron cleanup + consider disabling Gutenberg ability if not used |
-| **Member site 500 / LSAPI_CHILDREN limit** | WordPress spawns too many PHP processes, hitting LSAPI_CHILDREN limit (default 20) | Increase `LSAPI_CHILDREN` and `maxConns` in OpenLiteSpeed vhost config: `/www/server/panel/vhost/openlitespeed/detail/<site>.conf` → set to 50-100 |
+| **Member site 500 / LSAPI_CHILDREN limit** | WordPress spawns too many PHP processes, hitting LSAPI_CHILDREN limit (default 20) | Increase `LSAPI_CHILDREN` and `maxConns` in OpenLiteSpeed vhost config: `/www/server/panel/vhost/openlitespeed/detail/<site>.conf` → cap at ~25. Do **not** raise it toward 50-100: the setting is a *ceiling*, and every site using that PHP version shares one pool, so a high value lets a traffic spike spawn ~100 workers and OOM a small box. See `vps-server-admin` → `references/server-memory-diagnostics.md` |
 | **Database table crashed** | MySQL tables marked as crashed (e.g., `wplo_options` in `thegamec_wp632`) | `REPAIR TABLE <table>` or `mysqlcheck -r <database>` |
 | **MySQL socket mismatch** | PHP looks for socket at `/var/run/mysqld/mysqld.sock` but MariaDB uses `/tmp/mysql.sock` | Create symlink: `mkdir -p /var/run/mysqld && ln -sf /tmp/mysql.sock /var/run/mysqld/mysqld.sock` |
-| **OpenLiteSpeed 500 on member site** | LSAPI_CHILDREN limit reached (default 20) + crashed DB tables (`wplo_options` marked as crashed) | 1. Increase `LSAPI_CHILDREN` and `maxConns` to 50-100 in vhost config
+| **OpenLiteSpeed 500 on member site** | LSAPI_CHILDREN limit reached (default 20) + crashed DB tables (`wplo_options` marked as crashed) | 1. Cap `LSAPI_CHILDREN`/`maxConns` at ~25 in the vhost config *and* the global `PHP_LSAPI_CHILDREN` in `/usr/local/lsws/conf/httpd_config.conf` — raising the ceiling to 100 is what lets one spike spawn ~100 PHP workers and exhaust RAM
 2. Repair crashed tables: `REPAIR TABLE wplo_options`
 3. Check stderr log: `/usr/local/lsws/logs/stderr.log` for "Reached max children process limit" |
-| **OpenLiteSpeed "Reached max children process limit"** | LSAPI_CHILDREN limit reached (default 20) due to high concurrent requests or WordPress cron/spam | Increase `LSAPI_CHILDREN` and `maxConns` in vhost config to 50-100, then restart OpenLiteSpeed: `/www/server/panel/init.sh restart` |
+| **OpenLiteSpeed "Reached max children process limit"** | LSAPI_CHILDREN limit reached (default 20) due to high concurrent requests or WordPress cron/spam | Cap `LSAPI_CHILDREN`/`maxConns` at ~25 (site-level and the global `PHP_LSAPI_CHILDREN`) — a `Reached max children` warning means the ceiling is doing its job, not that the ceiling is too low; then restart OpenLiteSpeed: `/www/server/panel/init.sh restart` |
 
 ## Workflow: SSH Setup from Scratch
 1. Generate SSH key pair locally
@@ -113,152 +113,149 @@ chown -R 1000:1000 /var/lib/docker/volumes/<new_volume>/_data
 4. If data missing: find old volume, copy data, fix permissions
 5. If user auth broken: reset via `docker exec n8n n8n user-management:reset` (ensure project exists)
 
-### Auto-Cleanup Cron (Prevent Disk 99%)
-Add to root crontab (`crontab -e`):
+### Disk cleanup
 
-```bash
-# Auto cleanup tmp tirith-install daily (Novamira plugin bug)
-0 3 * * * find /tmp -name "tirith-install-*" -type d -mtime +1 -exec rm -rf {} \; 2>/dev/null
+Auto-cleanup crontab (journal vacuum, Docker prune, OpenLiteSpeed + aaPanel log rotation, root + Hermes caches) and the ordered manual workflow for a disk over 90%: `references/disk-cleanup.md`.
 
-# Clean old WP backups weekly (All-in-One WP Migration)
-0 4 * * 0 find /www/wwwroot/*/wp-content/ai1wm-backups -type f -mtime +30 -delete 2>/dev/null
+**Check `journalctl --disk-usage` first** — the systemd journal is usually the single largest consumer, and `/usr/local/lsws/logs` (OpenLiteSpeed) reaches 10-15GB+ unrotated. Both refill without the cron entries in that reference.
 
-# Clean aaPanel logs monthly
-0 5 1 * * find /www/server/panel/logs -name "*.log" -mtime +30 -delete 2>/dev/null
+### Manual disk cleanup (disk > 90%)
 
-# Clean journal logs daily (systemd) - permanent 500MB limit + 7d retention
-0 2 * * * journalctl --vacuum-size=500M --vacuum-time=7d 2>/dev/null
+Ordered steps — journal, Docker, aaPanel/wwwlogs, OpenLiteSpeed, root + Hermes caches, APT, verify: `references/disk-cleanup.md`.
 
-# Clean Docker dangling images & build cache daily
-0 3 * * * docker image prune -a -f --filter "until=24h" && docker builder prune -a -f --filter "until=24h" 2>/dev/null
+## Cross-machine Hermes sync (PC ↔ VPS via GitHub)
 
-# Clean OpenLiteSpeed logs weekly (CRITICAL - was 13GB!)
-0 4 * * 0 find /usr/local/lsws/logs -name "*.log" -mtime +7 -delete 2>/dev/null
-find /usr/local/lsws/logs -name "*.log.*" -mtime +7 -delete 2>/dev/null
+Model: the **desktop is the config surface, the VPS is the runtime**. Skills, memories, plugins and SOUL.md are identical on both; the files that define a machine stay per-machine.
 
-# Clean root caches daily (go-build, electron, playwright, node-gyp, uv, pip, hermes)
-0 3 * * * rm -rf /root/.cache/go-build /root/.cache/electron /root/.cache/ms-playwright /root/.cache/node-gyp /root/.cache/uv /root/.cache/pip 2>/dev/null
+Three rules decide whether this works at all:
 
-# Clean Hermes cache daily (keep config)
-0 3 * * * find /root/.hermes -type f -name "*.db" -delete; find /root/.hermes -type f -name "*.log" -delete; find /root/.hermes -type d \( -name cache -o -name audio_cache -o -name plugins \) -exec rm -rf {} + 2>/dev/null
+1. **Apply the repo to the live Hermes home.** A `git pull` inside `/root/hermes-sync` changes nothing the running agent reads — that is `/root/.hermes`. A clone plus a `sync.sh` with neither a cron entry nor an apply step is the classic silent failure: every piece exists, nothing syncs, and nothing reports an error.
+2. **Prove the schedule by execution, not by existence.** The sync script appends a timestamped line to a log; the newest line must be within one interval. `journalctl -t <tag>` or that log file is the evidence — "the script is on disk" is not.
+3. **One bot token = one running machine.** The same token enabled on two hosts produces `Conflict: terminated by other getUpdates request`, and each side steals the other's updates. Content is duplicated; *execution* is not. Disable the adapter on the standby machine.
+
+### .gitignore — allowlist content, never the home root
+
+Tracking the home root drags in `node/`, `tools/`, `cache/`, `logs/`, `cron/`, `installs/` (hundreds of churning files). Ignore everything, re-include only content:
+
+```gitignore
+*
+!*/
+!.gitignore
+!SOUL.md
+!skills/**
+!memories/**
+!marketing/**
+!prompts/**
+
+# per-machine — never sync
+config.yaml
+.env
+.env.*
+node/
+tools/
+cache/
+logs/
+installs/
+cron/
+backups/
+*.db
+*.lock
+*.log
 ```
 
-### Manual Disk Cleanup Workflow (Disk > 90%)
-When disk usage exceeds 90%, run in order:
+**`config.yaml` and `.env` are per-machine by design, not by accident.** The VPS points `model.base_url` at the local 9router and enables different adapters than the desktop; `platforms.<name>.enabled` appears in both files. Syncing them overwrites one machine's identity with the other's.
+
+### Rebuilding the index after a .gitignore change
+
+Already-tracked files stay tracked. `git rm -r --cached .` **aborts** with `use -f to force removal` the moment the index holds a gitlink (a nested repo under `plugins/`), and the reset then silently does nothing:
 
 ```bash
-# 1. Check top directories
-du -h / --max-depth=2 2>/dev/null | sort -hr | head -20
-
-# 2. Check journal size first (often single largest consumer)
-journalctl --disk-usage
-
-# 3. Clean journal logs (often 3-4GB) - set permanent 500MB limit
-journalctl --vacuum-size=500M --vacuum-time=7d
-# Also set permanent limit:
-mkdir -p /etc/systemd/journald.conf.d
-cat > /etc/systemd/journald.conf.d/99-limit.conf << 'EOF'
-[Journal]
-SystemMaxUse=500M
-SystemMaxFileSize=100M
-SystemKeepFree=1G
-MaxRetentionSec=7day
-EOF
-systemctl restart systemd-journald
-
-# 4. Clean Docker dangling images & build cache
-docker image prune -a -f --filter "until=24h"
-docker builder prune -a -f --filter "until=24h"
-docker volume prune -f
-
-# 5. Clean aaPanel panel logs (>7 days)
-find /www/server/panel/logs -type f -name "*.log" -mtime +7 -delete
-find /www/server/panel/logs -type f -name "*.log.*" -delete
-
-# 6. Clean nginx/access logs rotated (>7 days)
-find /www/wwwlogs -type f -name "*.log" -mtime +7 -delete
-find /www/wwwlogs -type f -name "*.log.*" -delete
-
-# 7. Clean OpenLiteSpeed logs (>7 days) - CRITICAL, often 10GB+
-find /usr/local/lsws/logs -type f -name "*.log" -mtime +7 -delete
-find /usr/local/lsws/logs -type f -name "*.log.*" -mtime +7 -delete
-
-# 8. Clean root cache directories
-rm -rf /root/.cache/go-build /root/.cache/electron /root/.cache/ms-playwright
-rm -rf /root/.cache/node-gyp /root/.cache/uv /root/.cache/pip
-
-# 9. Clean Hermes cache (keep config)
-find /root/.hermes -type f -name "*.db" -delete
-find /root/.hermes -type f -name "*.log" -delete
-find /root/.hermes -type d \( -name cache -o -name audio_cache -o -name plugins \) -exec rm -rf {} +
-
-# 10. Clean APT cache
-apt-get clean && apt-get autoclean -y
-
-# 11. Verify
-df -h /
+git rm -r --cached -f .    # -f required; --cached never touches the working tree
+git add -A
+git ls-files | awk -F/ '{print $1}' | sort | uniq -c | sort -rn   # confirm the allowlist took
 ```
 
-**Pitfall:** `/var/log/journal` (systemd) is often the single largest consumer (3-4GB). Always check `journalctl --disk-usage` first. Set `SystemMaxUse=500M` in `/etc/systemd/journald.conf.d/99-limit.conf` for permanent limit.
+### VPS runner — fetch → capture → push → apply
 
-**Pitfall:** `/usr/local/lsws/logs` (OpenLiteSpeed) can grow to 10-15GB+ if not rotated. Always check `du -sh /usr/local/lsws/logs` during cleanup. Add weekly cron (see Auto-Cleanup Cron above) to prevent recurrence.
+`/root/hermes-sync.sh`, every 5 minutes. The asymmetry is deliberate: `--update` and **no** `--delete` when capturing from the VPS (a skill living only on the desktop is never deleted by the VPS); `--delete` only in the repo→live direction.
 
-## Git-Based Hermes Sync Setup (PC ↔ VPS)
-
-**New capability added Sep 2026:** Automated synchronization of Hermes memory, skills, plugins, and config between local PC and VPS via GitHub private repo with cron auto-pull on VPS.
-
-### Setup
-
-1. **Create private GitHub repo** (e.g., `hermes-sync`)
-2. **Generate PAT** with `repo` scope
-3. **VPS: Initialize repo & cron**
 ```bash
-ssh -p 2222 -i ~/.ssh/vps_key root@194.127.192.52
-mkdir -p /root/hermes-sync && cd /root/hermes-sync
-git init
-git config user.name 'hermes-sync-bot'
-git config user.email 'hermes-sync@smartmillionaire.co.id'
-git remote add origin https://<user>:<PAT>@github.com/<user>/hermes-sync.git
-git branch -M main
-
-# Cron auto-pull every 5 min
-crontab -l 2>/dev/null; echo '*/5 * * * * /root/hermes-sync/sync.sh' | crontab -
-cat > /root/hermes-sync/sync.sh << 'EOF'
 #!/bin/bash
-cd /root/hermes-sync && git pull origin main 2>&1 | logger -t hermes-sync
-EOF
-chmod +x /root/hermes-sync/sync.sh
+export GIT_EDITOR=true
+REPO=/root/hermes-sync; LIVE=/root/.hermes; LOG=/root/sync.log
+DIRS="skills memories plugins marketing prompts"
+log() { echo "[$(date '+%F %T')] $*" >> "$LOG"; }
+cd "$REPO" || { log "GAGAL: repo tidak ada"; exit 1; }
+git config http.version HTTP/1.1
+git fetch origin main >>"$LOG" 2>&1 || { log "GAGAL fetch"; exit 1; }
+git reset --hard origin/main >>"$LOG" 2>&1
+changed=0
+for d in $DIRS; do
+  [ -d "$LIVE/$d" ] || continue; mkdir -p "$REPO/$d"
+  out=$(rsync -a --update --itemize-changes "$LIVE/$d/" "$REPO/$d/" 2>>"$LOG")
+  [ -n "$out" ] && { changed=1; log "perubahan lokal VPS di $d"; }
+done
+if [ "$changed" = "1" ]; then
+  git add -A >>"$LOG" 2>&1
+  git diff --cached --quiet || {
+    git -c user.name=vps -c user.email=vps@local commit -q -m "VPS auto-sync $(date '+%F %T')" >>"$LOG" 2>&1
+    git push origin main >>"$LOG" 2>&1 || log "GAGAL push (akan dicoba lagi)"
+  }
+fi
+for d in $DIRS; do
+  [ -d "$REPO/$d" ] || continue; mkdir -p "$LIVE/$d"
+  rsync -a --delete "$REPO/$d/" "$LIVE/$d/" 2>>"$LOG"
+done
+log "OK sync selesai (repo=$(git log -1 --format=%h))"
 ```
 
-4. **PC: Push initial data**
+Install the cron by **appending**. `echo '...' | crontab -` replaces the entire crontab and wipes every other job on the box:
+
 ```bash
-cd ~/AppData/Local/hermes
-git init
-git remote add origin https://<user>:<PAT>@github.com/<user>/hermes-sync.git
-git add memories/ skills/ plugins/ config.yaml *.md
-git commit -m "Initial sync from PC"
-git branch -M main
-git push -u origin main
+crontab -l 2>/dev/null | grep -v 'hermes-sync.sh' > /tmp/ct
+echo '*/5 * * * * /root/hermes-sync.sh' >> /tmp/ct
+crontab /tmp/ct && rm -f /tmp/ct && crontab -l
 ```
 
-5. **Daily workflow (PC)**
+### Desktop runner — pull-rebase-retry
+
+Two writers on one branch means a bare `git push` is regularly rejected non-fast-forward. Retry the cycle, and never let git open an editor from a scheduled context — the pull then hangs forever with no output.
+
 ```bash
-cd ~/AppData/Local/hermes
-git add .
-git commit -m "Update skills/memory"
-git push
+export GIT_EDITOR=true
+git config http.version HTTP/1.1
+git add -A
+git diff --cached --quiet || git -c user.name=desktop -c user.email=desktop@local commit -q -m "Desktop auto-sync $(date '+%F %T')"
+for i in 1 2 3; do
+  git fetch origin main -q || { sleep 5; continue; }
+  git -c core.editor=true pull --rebase --no-edit origin main || { git rebase --abort; sleep 5; continue; }
+  git push origin main && exit 0
+  sleep 5
+done
+exit 1
 ```
-**VPS auto-pulls within 5 minutes.**
 
-### Files Synced
-- `memories/` → MEMORY.md, USER.md (auto-sync)
-- `skills/` → All custom skills (70+)
-- `plugins/` → Desktop plugins
-- `config.yaml` → Hermes settings
-- `*.md` → Plans, notes
+Schedule it through a `.cmd` wrapper (sidesteps the arg-quoting maze) and set `MSYS_NO_PATHCONV=1`, or MSYS rewrites `/create` as a path:
 
-### Files NOT Synced (in .gitignore)
-- `cache/`, `logs/`, `audio_cache/`, `cache/scratch/` - temporary files
+```bash
+MSYS_NO_PATHCONV=1 schtasks /create /tn "HermesSyncPush" /tr "C:\Users\pc\hermes-sync-push.cmd" /sc minute /mo 30 /f
+MSYS_NO_PATHCONV=1 schtasks /run /tn "HermesSyncPush"
+```
+
+### Verify end-to-end before calling it done
+
+1. Write a file on the desktop inside a synced dir; commit; push.
+2. Confirm it is **absent** on the VPS — proving the transport is the cron and not something else.
+3. Wait one interval; confirm it appeared *and* that `sync.log` gained a timestamped line.
+4. Compare a paired file from both ends **ignoring line endings**: the desktop is CRLF, the VPS LF, so `md5sum` differs on identical content. `tr -d '\r' | diff -` is the honest comparison.
+
+### git-on-Windows symptoms that cost real time
+
+- `fatal: expected flush after ref listing` on fetch/push → `git config http.version HTTP/1.1`.
+- A `git pull` that emits nothing and never returns is waiting on an editor for the merge commit → `GIT_EDITOR=true` plus `--no-edit`/`--rebase`.
+- Whole-file overwrite of an existing memory file is refused as stale; use the memory tool or read the file first.
+
+Detail, the messenger-session caveat, and the standby-machine procedure: `references/hermes-cross-machine-sync.md`.
 
 ---
 
@@ -342,7 +339,17 @@ ssh -i ~/.ssh/vps_key -p 2222 root@<VPS_IP> \
 ```
 
 #### Telegram Bot Conflict Resolution
-When getting `Conflict: terminated by other getUpdates request; make sure that only one bot instance is running`:
+
+**Check for a second machine FIRST.** A `Conflict: terminated by other getUpdates request` that recurs on a schedule almost always means the same bot token is enabled on both the desktop and the VPS. Confirm by hashing the token on each host (never print it) and comparing the adapter flag:
+
+```bash
+grep '^TELEGRAM_BOT_TOKEN=' ~/.hermes/.env | sha256sum | cut -c1-12   # same hash on both = same bot
+hermes config get platforms.telegram.enabled
+```
+
+The permanent fix is turning the adapter **off on the standby machine** (`hermes config set platforms.telegram.enabled false`). The recovery below only clears one stale connection — if the conflict comes back on the next tick, it is the second machine.
+
+When the conflict is a single stale polling session:
 
 ```bash
 # 1. Stop gateway completely
@@ -395,11 +402,7 @@ journalctl -u hermes-gateway -f
 - `references/whatsapp-gateway-setup.md` - Hermes WhatsApp gateway (Baileys) setup on VPS
 - `references/mysql-troubleshooting.md` - MySQL crashed tables, socket symlink, LSAPI_CHILDREN limit
 - `references/novamira-tirith-install-cleanup.md` - Novamira plugin disk cleanup
+- `references/hermes-cross-machine-sync.md` - cross-machine sync in depth: content-vs-runtime split, active/standby host switch, messenger session migration, cron verification, first-sync reconciliation
 
 ## Templates
 - `templates/ssh-keygen.sh` - SSH key generation script
-- `templates/n8n-docker-run.sh` - n8n container recreation script
-
-## Scripts
-- `scripts/check-ssh.sh` - Verify SSH connectivity
-- `scripts/n8n-health-check.sh` - Check n8n container status
