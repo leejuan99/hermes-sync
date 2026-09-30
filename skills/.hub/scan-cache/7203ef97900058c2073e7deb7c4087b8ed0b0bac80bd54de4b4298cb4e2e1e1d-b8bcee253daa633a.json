@@ -1,0 +1,13 @@
+{
+  "bundle_hash": "sha256:7203ef97900058c2073e7deb7c4087b8ed0b0bac80bd54de4b4298cb4e2e1e1d",
+  "scanner_version": "skills-guard-v6",
+  "source": "https://raw.githubusercontent.com/typesafe-ai/skills/main/skills/typesafe-ai/SKILL.md",
+  "source_url": "https://raw.githubusercontent.com/typesafe-ai/skills/main/skills/typesafe-ai/SKILL.md",
+  "verdict": "safe",
+  "trust_level": "community",
+  "findings": [],
+  "rules": [],
+  "scanned_at": "2026-09-30T14:01:43.399925+00:00",
+  "summary": "typesafe-ai: clean scan, no threats detected",
+  "fresh": true
+}

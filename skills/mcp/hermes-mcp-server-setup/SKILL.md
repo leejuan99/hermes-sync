@@ -98,11 +98,29 @@ problem, not a config problem. Do this before telling the user it is set up.
   "not working", find out whether a real tool call ever returned rows. If it did, the transport, auth
   and any SDK patch are all fine and the fault is in the interpretation of the result — do not reopen
   the setup. Probe the tool, not the URL.
-- **The provider still has to allowlist the redirect URI.** Hermes defaults to
+- **The provider still has to allowlist the redirect URI, and a passing probe does not
+  prove it is allowlisted.** Hermes defaults to
   `http://<redirect_host or 127.0.0.1>:<port>/callback`; pin it with
-  `oauth.redirect_host` / `oauth.redirect_port`. Check it *before* starting a browser
-  flow: hit the provider's `authorization_endpoint` with that `redirect_uri` and look
-  for `URL blocked` / `redirect_uri is not whitelisted` instead of the login page.
+  `oauth.redirect_host` / `oauth.redirect_port`. Pre-probing the provider's
+  `authorization_endpoint` with that `redirect_uri` catches a flat `URL blocked`
+  refusal, but not the common case: providers that serve the login page on the GET and
+  validate the redirect only at *approval* time, after the user has consented. App
+  state flips this — an unpublished Meta app accepts the loopback URI, and publishing
+  it starts rejecting the same URI. So when the flow dies with `This redirect failed
+  because the redirect URI is not whitelisted in the app's Client OAuth Settings`,
+  the fix is in the provider's dashboard (turn Client + Web OAuth Login on, add the
+  exact URI) and there is nothing to change in Hermes' config — have the user fix it
+  and re-run the login.
+- **The loopback callback window is 5 minutes by default and is the usual cause of a
+  "silent" failed login.** `hermes mcp login` waits `oauth.timeout` seconds (default
+  `300`) for the callback, while the user has to read your message, switch windows and
+  click through consent. Raise it *before* starting the flow
+  (`hermes config set mcp_servers.<name>.oauth.timeout 900`) and paste the printed
+  authorization URL into your reply so a slow browser launch does not burn the whole
+  attempt. Diagnosing a timeout: a provider-side rejection never reaches the loopback
+  port, so it leaves **no** line in `logs/errors.log` and looks identical to the user
+  simply not getting there — check whether anything ever hit the callback port before
+  blaming the redirect URI.
 - **Never build on a pasted token without validating it.** They are usually already
   expired. Meta's Graph `debug_token`
   (`?input_token=<tok>&access_token=<app_id>|<app_secret>`) returns `is_valid`,
@@ -136,3 +154,5 @@ problem, not a config problem. Do this before telling the user it is set up.
 - `scripts/probe_mcp_endpoint.sh` — dead-endpoint vs OAuth-discovery probe (step 1).
 - `references/oauth-provider-quirks.md` — pre-registered-client config block plus
   per-provider OAuth notes. Extend that file instead of adding a new one per provider.
+- `references/direct-tool-calls.md` — authenticated `tools/call` over curl (how to pull
+  real data after a login succeeds) plus the Meta Ads read-call notes.
