@@ -1571,13 +1571,13 @@
     "created_by": null,
     "last_patched_at": null,
     "last_reused_patch_generation": 0,
-    "last_used_at": "2026-09-30T08:00:22.218374+00:00",
+    "last_used_at": "2026-09-30T08:30:22.629852+00:00",
     "last_viewed_at": "2026-09-30T04:30:33.941627+00:00",
     "patch_count": 0,
     "patch_generation": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 13,
+    "use_count": 14,
     "view_count": 4
   },
   "spike": {
@@ -1748,6 +1748,21 @@
     "state": "active",
     "use_count": 3,
     "view_count": 3
+  },
+  "vps-remote-ops": {
+    "archived_at": null,
+    "created_at": "2026-09-30T08:32:39.660905+00:00",
+    "created_by": null,
+    "last_patched_at": null,
+    "last_reused_patch_generation": 0,
+    "last_used_at": "2026-09-30T08:32:39.665421+00:00",
+    "last_viewed_at": "2026-09-30T08:32:39.660933+00:00",
+    "patch_count": 0,
+    "patch_generation": 0,
+    "pinned": false,
+    "state": "active",
+    "use_count": 1,
+    "view_count": 1
   },
   "vps-server-access": {
     "archived_at": "2026-09-16T07:34:00.470661+00:00",
