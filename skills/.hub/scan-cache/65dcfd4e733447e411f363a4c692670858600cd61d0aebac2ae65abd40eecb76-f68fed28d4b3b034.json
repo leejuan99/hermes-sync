@@ -1,0 +1,13 @@
+{
+  "bundle_hash": "sha256:65dcfd4e733447e411f363a4c692670858600cd61d0aebac2ae65abd40eecb76",
+  "scanner_version": "skills-guard-v2",
+  "source": "@hith3sh/telegram-messaging",
+  "source_url": "@hith3sh/telegram-messaging",
+  "verdict": "safe",
+  "trust_level": "community",
+  "findings": [],
+  "rules": [],
+  "scanned_at": "2026-09-20T15:06:36.588727+00:00",
+  "summary": "telegram-messaging: clean scan, no threats detected",
+  "fresh": true
+}
