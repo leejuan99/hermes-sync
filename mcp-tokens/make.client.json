@@ -1,0 +1,19 @@
+{
+  "response_types": [
+    "code"
+  ],
+  "client_name": "Hermes Agent 2964bee38556e671",
+  "redirect_uris": [
+    "http://127.0.0.1:27890/callback"
+  ],
+  "token_endpoint_auth_method": "client_secret_post",
+  "grant_types": [
+    "authorization_code",
+    "refresh_token"
+  ],
+  "client_id": "50e6b8ac-cabd-4a97-ab65-f99104b579d0",
+  "client_secret": "64487ade-8369-4345-9dc6-54605e4f32c1",
+  "client_id_issued_at": 1790745641,
+  "client_secret_expires_at": 0,
+  "issuer": "https://www.make.com/mcp"
+}

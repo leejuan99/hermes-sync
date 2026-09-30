@@ -1,0 +1,55 @@
+mcp_servers:
+  novamira-smartmillionaire:
+    command: npx
+    args:
+      - -y
+      - '@automattic/mcp-wordpress-remote@latest'
+    env:
+      WP_API_URL: https://smartmillionaire.co.id/wp-json/mcp/novamira
+      WP_API_USERNAME: yudira
+      WP_API_PASSWORD: BtFh...yojG
+    enabled: true
+  make:
+    type: http
+    url: https://mcp.make.com
+    enabled: false
+    auth: oauth
+  wordpress-com:
+    url: https://public-api.wordpress.com/wpcom/v2/mcp/v1
+    auth: oauth
+    enabled: false
+  miro:
+    url: https://mcp.miro.com/
+    auth: oauth
+    enabled: false
+    tools:
+      exclude:
+        - diagram_create
+        - diagram_get_dsl
+        - layout_create
+        - layout_get_dsl
+        - layout_read
+        - layout_update
+  novamira-leejuan-com:
+    command: npx
+    args:
+      - -y
+      - '@automattic/mcp-wordpress-remote@latest'
+    env:
+      WP_API_URL: https://leejuan.com/wp-json/mcp/novamira
+      WP_API_USERNAME: leejuan
+      WP_API_PASSWORD: 8R8L...oUSD
+    enabled: true
+  meta-ads:
+    url: https://mcp.facebook.com/ads
+    enabled: true
+    auth: oauth
+    type: http
+    oauth:
+      client_id: '2176994976587862'
+      client_secret: fc0d...730a
+      scope: ads_management ads_read business_management pages_show_list 
+        pages_manage_ads pages_read_engagement
+      redirect_host: localhost
+      redirect_port: 8765
+    protocol: legacy

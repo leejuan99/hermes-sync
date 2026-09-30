@@ -16,6 +16,8 @@
 !memories/**
 !marketing/**
 !prompts/**
+!mcp_servers.yaml
+!mcp-tokens/**
 
 # --- 4. SPESIFIK MESIN — JANGAN PERNAH disync ---
 config.yaml
