@@ -660,14 +660,14 @@
     "created_by": null,
     "last_patched_at": "2026-09-29T15:18:54.119729+00:00",
     "last_reused_patch_generation": 1,
-    "last_used_at": "2026-09-30T03:54:22.918656+00:00",
-    "last_viewed_at": "2026-09-30T03:54:22.912336+00:00",
+    "last_used_at": "2026-09-30T10:11:49.731646+00:00",
+    "last_viewed_at": "2026-09-30T10:11:49.725720+00:00",
     "patch_count": 1,
     "patch_generation": 1,
     "pinned": false,
     "state": "active",
-    "use_count": 28,
-    "view_count": 28
+    "use_count": 29,
+    "view_count": 29
   },
   "hermes-agent-skill-authoring": {
     "archived_at": "2026-09-16T07:33:44.220999+00:00",
@@ -732,15 +732,15 @@
     "created_by": "agent",
     "first_seen_at": null,
     "last_patched_at": "2026-09-30T09:28:39.756956+00:00",
-    "last_reused_patch_generation": 0,
-    "last_used_at": "2026-09-30T09:28:32.756993+00:00",
-    "last_viewed_at": "2026-09-30T09:28:32.750923+00:00",
+    "last_reused_patch_generation": 1,
+    "last_used_at": "2026-09-30T10:21:54.370247+00:00",
+    "last_viewed_at": "2026-09-30T10:21:54.363297+00:00",
     "patch_count": 1,
     "patch_generation": 1,
     "pinned": false,
     "state": "active",
-    "use_count": 1,
-    "view_count": 1
+    "use_count": 2,
+    "view_count": 2
   },
   "hermes-vps-gateway": {
     "archived_at": null,
@@ -884,6 +884,22 @@
     "state": "archived",
     "use_count": 1,
     "view_count": 1
+  },
+  "jev-decisions": {
+    "archived_at": null,
+    "created_at": "2026-09-30T10:21:36.019214+00:00",
+    "created_by": "learn",
+    "first_seen_at": null,
+    "last_patched_at": null,
+    "last_reused_patch_generation": 0,
+    "last_used_at": null,
+    "last_viewed_at": null,
+    "patch_count": 0,
+    "patch_generation": 0,
+    "pinned": false,
+    "state": "active",
+    "use_count": 0,
+    "view_count": 0
   },
   "jupyter-live-kernel": {
     "archived_at": null,
