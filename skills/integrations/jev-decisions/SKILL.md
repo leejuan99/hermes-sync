@@ -12,6 +12,16 @@ metadata:
 
 # Jev Decisions (TypeSafe via OpenRouter)
 
+## When to Use
+
+Load this skill when a task needs a **fast, typed judgment** rather than
+generated text: routing an item to a team/category, classifying or tagging
+incoming messages, gating a risky action, grading output against a rubric, or
+ranking candidates. Trigger words: "classify", "route", "categorize", "tag",
+"does this match", "which one", "score this", "gate/approve this action".
+Do NOT use it when the deliverable is prose, code, or an explanation — use a
+chat model for that.
+
 Jev is a **System One decision model**, not a chat LLM. Send a `state` (facts)
 plus typed `questions`, get back **typed answers with probabilities** — no prose,
 no reasoning trace. Use it when code must branch on a crisp answer: routing,
