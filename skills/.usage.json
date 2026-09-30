@@ -701,15 +701,15 @@
     "created_by": "agent",
     "first_seen_at": null,
     "last_patched_at": "2026-09-30T10:57:03.265604+00:00",
-    "last_reused_patch_generation": 3,
-    "last_used_at": "2026-09-30T10:56:53.681788+00:00",
-    "last_viewed_at": "2026-09-30T10:56:53.674834+00:00",
+    "last_reused_patch_generation": 5,
+    "last_used_at": "2026-09-30T12:04:47.917274+00:00",
+    "last_viewed_at": "2026-09-30T12:04:47.909973+00:00",
     "patch_count": 5,
     "patch_generation": 5,
     "pinned": false,
     "state": "active",
-    "use_count": 3,
-    "view_count": 3
+    "use_count": 4,
+    "view_count": 4
   },
   "hermes-messaging-gateway": {
     "archived_at": null,
@@ -732,15 +732,15 @@
     "created_by": "agent",
     "first_seen_at": null,
     "last_patched_at": "2026-09-30T10:56:39.252059+00:00",
-    "last_reused_patch_generation": 1,
-    "last_used_at": "2026-09-30T10:55:43.971985+00:00",
-    "last_viewed_at": "2026-09-30T10:55:43.965319+00:00",
+    "last_reused_patch_generation": 4,
+    "last_used_at": "2026-09-30T12:05:08.544044+00:00",
+    "last_viewed_at": "2026-09-30T12:05:08.531940+00:00",
     "patch_count": 4,
     "patch_generation": 4,
     "pinned": false,
     "state": "active",
-    "use_count": 3,
-    "view_count": 3
+    "use_count": 4,
+    "view_count": 4
   },
   "hermes-vps-gateway": {
     "archived_at": null,
