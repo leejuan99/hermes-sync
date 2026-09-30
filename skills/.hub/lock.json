@@ -372,6 +372,172 @@
       },
       "installed_at": "2026-09-29T14:42:06.184959+00:00",
       "updated_at": "2026-09-29T14:42:06.184959+00:00"
+    },
+    "comfyui": {
+      "source": "official",
+      "identifier": "official/creative/comfyui",
+      "trust_level": "builtin",
+      "scan_verdict": "backfilled",
+      "content_hash": "sha256:612d22cb79d98990",
+      "install_path": "creative/comfyui",
+      "files": [
+        "SKILL.md",
+        "references/official-cli.md",
+        "references/rest-api.md",
+        "references/template-integrity.md",
+        "references/workflow-format.md",
+        "scripts/_common.py",
+        "scripts/auto_fix_deps.py",
+        "scripts/check_deps.py",
+        "scripts/comfyui_setup.sh",
+        "scripts/extract_schema.py",
+        "scripts/fetch_logs.py",
+        "scripts/hardware_check.py",
+        "scripts/health_check.py",
+        "scripts/run_batch.py",
+        "scripts/run_workflow.py",
+        "scripts/ws_monitor.py",
+        "tests/README.md",
+        "tests/conftest.py",
+        "tests/pytest.ini",
+        "tests/test_check_deps.py",
+        "tests/test_cloud_integration.py",
+        "tests/test_common.py",
+        "tests/test_extract_schema.py",
+        "tests/test_run_workflow.py",
+        "workflows/README.md",
+        "workflows/animatediff_video.json",
+        "workflows/flux_dev_txt2img.json",
+        "workflows/sd15_txt2img.json",
+        "workflows/sdxl_img2img.json",
+        "workflows/sdxl_inpaint.json",
+        "workflows/sdxl_txt2img.json",
+        "workflows/upscale_4x.json",
+        "workflows/wan_video_t2v.json"
+      ],
+      "metadata": {
+        "backfilled_from": "optional-skills"
+      },
+      "installed_at": "2026-09-30T03:58:40.568309+00:00",
+      "updated_at": "2026-09-30T03:58:40.568309+00:00"
+    },
+    "excalidraw": {
+      "source": "official",
+      "identifier": "official/creative/excalidraw",
+      "trust_level": "builtin",
+      "scan_verdict": "backfilled",
+      "content_hash": "sha256:359112274e8262e0",
+      "install_path": "creative/excalidraw",
+      "files": [
+        "SKILL.md",
+        "references/colors.md",
+        "references/dark-mode.md",
+        "references/examples.md",
+        "scripts/upload.py"
+      ],
+      "metadata": {
+        "backfilled_from": "optional-skills"
+      },
+      "installed_at": "2026-09-30T03:58:40.654479+00:00",
+      "updated_at": "2026-09-30T03:58:40.654479+00:00"
+    },
+    "pretext": {
+      "source": "official",
+      "identifier": "official/creative/pretext",
+      "trust_level": "builtin",
+      "scan_verdict": "backfilled",
+      "content_hash": "sha256:9e2e8f6151b4be1b",
+      "install_path": "creative/pretext",
+      "files": [
+        "SKILL.md",
+        "references/patterns.md",
+        "templates/donut-orbit.html",
+        "templates/hello-orb-flow.html"
+      ],
+      "metadata": {
+        "backfilled_from": "optional-skills"
+      },
+      "installed_at": "2026-09-30T03:58:40.685535+00:00",
+      "updated_at": "2026-09-30T03:58:40.685535+00:00"
+    },
+    "touchdesigner-mcp": {
+      "source": "official",
+      "identifier": "official/creative/touchdesigner-mcp",
+      "trust_level": "builtin",
+      "scan_verdict": "backfilled",
+      "content_hash": "sha256:0c6b0a3ffb64b73c",
+      "install_path": "creative/touchdesigner-mcp",
+      "files": [
+        "SKILL.md",
+        "references/3d-scene.md",
+        "references/animation.md",
+        "references/audio-reactive.md",
+        "references/dat-scripting.md",
+        "references/external-data.md",
+        "references/geometry-comp.md",
+        "references/glsl.md",
+        "references/layout-compositor.md",
+        "references/mcp-tools.md",
+        "references/midi-osc.md",
+        "references/network-patterns.md",
+        "references/operator-tips.md",
+        "references/operators.md",
+        "references/panel-ui.md",
+        "references/particles.md",
+        "references/pitfalls.md",
+        "references/postfx.md",
+        "references/projection-mapping.md",
+        "references/python-api.md",
+        "references/replicator.md",
+        "references/troubleshooting.md",
+        "scripts/setup.sh"
+      ],
+      "metadata": {
+        "backfilled_from": "optional-skills"
+      },
+      "installed_at": "2026-09-30T03:58:40.775644+00:00",
+      "updated_at": "2026-09-30T03:58:40.775644+00:00"
+    },
+    "weights-and-biases": {
+      "source": "official",
+      "identifier": "official/mlops/evaluation/weights-and-biases",
+      "trust_level": "builtin",
+      "scan_verdict": "backfilled",
+      "content_hash": "sha256:4286e3db3985d52f",
+      "install_path": "mlops/evaluation/weights-and-biases",
+      "files": [
+        "SKILL.md",
+        "references/artifacts.md",
+        "references/integrations.md",
+        "references/sweeps.md"
+      ],
+      "metadata": {
+        "backfilled_from": "optional-skills"
+      },
+      "installed_at": "2026-09-30T03:58:40.781430+00:00",
+      "updated_at": "2026-09-30T03:58:40.781430+00:00"
+    },
+    "llama-cpp": {
+      "source": "official",
+      "identifier": "official/mlops/inference/llama-cpp",
+      "trust_level": "builtin",
+      "scan_verdict": "backfilled",
+      "content_hash": "sha256:43a4ec8fb07acce8",
+      "install_path": "mlops/inference/llama-cpp",
+      "files": [
+        "SKILL.md",
+        "references/advanced-usage.md",
+        "references/hub-discovery.md",
+        "references/optimization.md",
+        "references/quantization.md",
+        "references/server.md",
+        "references/troubleshooting.md"
+      ],
+      "metadata": {
+        "backfilled_from": "optional-skills"
+      },
+      "installed_at": "2026-09-30T03:58:40.785752+00:00",
+      "updated_at": "2026-09-30T03:58:40.785752+00:00"
     }
   }
 }
