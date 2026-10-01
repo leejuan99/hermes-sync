@@ -1067,14 +1067,14 @@
     "first_seen_at": null,
     "last_patched_at": null,
     "last_reused_patch_generation": 0,
-    "last_used_at": null,
-    "last_viewed_at": null,
+    "last_used_at": "2026-10-01T23:18:34.211520+00:00",
+    "last_viewed_at": "2026-10-01T23:18:34.205310+00:00",
     "patch_count": 0,
     "patch_generation": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 0,
-    "view_count": 0
+    "use_count": 1,
+    "view_count": 1
   },
   "n8n-workflow-automation": {
     "archived_at": "2026-09-16T07:33:48.651218+00:00",
@@ -1630,14 +1630,14 @@
     "first_seen_at": null,
     "last_patched_at": "2026-10-01T12:48:28.974795+00:00",
     "last_reused_patch_generation": 3,
-    "last_used_at": "2026-10-01T13:46:45.494046+00:00",
-    "last_viewed_at": "2026-10-01T13:46:45.486709+00:00",
+    "last_used_at": "2026-10-01T23:19:38.542197+00:00",
+    "last_viewed_at": "2026-10-01T23:19:38.535077+00:00",
     "patch_count": 3,
     "patch_generation": 3,
     "pinned": false,
     "state": "active",
-    "use_count": 6,
-    "view_count": 6
+    "use_count": 8,
+    "view_count": 8
   },
   "songsee": {
     "archived_at": "2026-09-16T07:33:57.122317+00:00",
