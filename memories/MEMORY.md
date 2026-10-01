@@ -2,7 +2,7 @@ User: casual Indonesian (bray, lo/gua, gass, susah njir). Prefers GUI over CLI, 
 §
 WhatsApp bot (Baileys, bot mode): bot 6285218011693, owner 62817777616 / LID 36885279826005 — all in WHATSAPP_ALLOWED_USERS.
 §
-User runs one-person company selling Coway air purifiers via Smart Millionaire. WordPress (smartmillionaire.co.id) + Sejoli plugin for membership/affiliate. Target: automate follow-up to purchasers via WA.
+User runs Smart Millionaire: Coway air purifiers + digital products MLM. WP smartmillionaire.co.id + member.smartmillionaire.co.id (Sejoli + custom 'smart-binary' binary MLM plugin, points-based). Target: pool komisi max 40-50% revenue, struktur bonus simple (4-5 inti, no BV), threshold akumulasi poin untuk node tree.
 §
 VPS 194.127.192.52 (GreenCloud SG, Ubuntu 22.04, aaPanel :8888 admin_path=/, SSH :2222 key-only ~/.ssh/vps_key) is the REAL 24/7 host: hermes-gateway = systemd USER unit + linger=yes, profile default, runs the bots. PC gateway is secondary — PC off = jobs die.
 §
