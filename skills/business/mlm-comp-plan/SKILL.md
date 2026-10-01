@@ -21,6 +21,7 @@ tags: [mlm, compensation-plan, affiliate, smart-binary, smartmillionaire]
 4. Simple 4-bonus stack (approved): Komisi Langsung 25% · Bonus Tim Rp 30.000/pair (1 poin Tim A + 1 poin Tim B) · Bonus Kepemimpinan 10% x 3 generasi of Bonus Tim · Reward Race (pairs per period, RESETS at period end, default quarterly).
 5. No lifetime carry (unbounded liability). Flush/reset per period. All money integer Rupiah + idempotent (per-transaction keys).
 6. Placement: referral #1-#2 locked to Tim A (foundation), #3+ free with auto-weak default. 1 orang = 1 posisi (triple-bundle exists, not advertised).
+7. Join GRATIS (owner-confirmed): affiliate signup requires NO purchase — separate affiliate registration path from product purchase. Earn only from sales. This is the core anti-MLM differentiator.
 
 ## Rebranding map (user: no MLM words in member area; tree hidden from members, kept in admin)
 member→Afiliasi/Partner · sponsor→partner perekrut · kaki kiri/kanan→Tim A/Tim B · pairing→Bonus Tim · wallet→Saldo Komisi · payout→Pencairan Komisi · tree→Struktur Tim (admin only) · upline→partner tim. Ban words: MLM, binary, sponsor, kiri, kanan, bonus pasangan, pohon jaringan.
