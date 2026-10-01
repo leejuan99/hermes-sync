@@ -1,10 +1,58 @@
 ---
 name: opc-marketing
 description: "Use when automating OPC marketing with Hermes Agent."
-version: 0.1.0
+version: 1.0.0
+author: Hermes Agent
+license: MIT
+platforms: [linux, macos, windows]
+metadata:
+  hermes:
+    tags: [hermes, marketing, opc, cron, kanban, webhook, profiles]
+    related_skills: [hermes-messaging-gateway, hermes-multimachine-sync]
 ---
 
 # OPC Marketing Workflow with Hermes Agent
+
+## When to Use
+
+- Building or extending an automated marketing/sales pipeline for a one-person company.
+- Wiring an external service's events (order, lead) into Hermes as a webhook.
+- Deciding whether something should be a profile, a bot, a cron agent, or a sub-agent.
+- A scheduled marketing agent is failing, silent, or reporting to nobody.
+
+## 0. Mental model: profile, bot, agent, sub-agent
+
+Four things that get conflated. Separate them by asking a different question of each:
+
+| Question | Answer |
+|---|---|
+| Where does this live? | **Profile** — a division: own home, memory, skills, sessions, cron |
+| Who can talk to a human? | **Bot** — a platform connection; the door into a profile |
+| Who works unprompted? | **Agent** — a cron job; runs on its schedule |
+| Who is hired for a burst? | **Sub-agent** — `delegate_task`, called from a chat turn, gone when done |
+
+**A bot is a door, not a dispatcher.** It does not read an incoming request and route it to the
+right agent, and nothing else does either. Work reaches an agent by exactly three routes:
+
+1. **Schedule** — the cron job fires whether or not anyone chats with anything.
+2. **You ask in a chat** — the agent in *that session* does the job itself, spawning sub-agents when
+   it is big. It does not hand off to the `content-writer` cron job or any other agent.
+3. **A Kanban card's assignee** — the dispatcher spawns a worker for that card.
+
+So "make me 30 posts this month", typed into a bot, is one agent doing one large job — not a router
+splitting it across the division. When the user asks how the bot decides who does what, the answer is
+that it does not: say this plainly, because it is the most common misunderstanding about the whole setup.
+
+**Chatting with a bot and opening a new session reach the same brain.** Same profile, same memory,
+same skills. The only difference is the surface: a bot is one persistent chat reachable from a phone,
+a new session is a GUI session where files and the board are actually readable. Choose on convenience,
+never on capability.
+
+**Kanban columns move because a prompt told an agent to move them**, not because anything watches
+column state. A per-division board works because each cron agent's prompt edits the cards it owns.
+Reserve `hermes kanban swarm` for assignee-driven worker dispatch, which is a different mechanism.
+
+Full worked roster, board flow and prompt layout for one division: `references/division-blueprint.md`.
 
 ## 1. Webhook Subscription for External Events
 
@@ -72,6 +120,15 @@ For tasks that should run on a timetable (e.g., keyword research, ad performance
 - **Overlapping schedules** – Ensure cron expressions don’t cause resource contention; stagger long‑running tasks.
 - **Scripts must live in ~/.hermes/scripts/** – `hermes cron create --script` rejects absolute or home-relative paths. Place wrapper scripts there and reference by filename only.
 - **No `hermes agent create` command** – The skill previously documented a non-existent command. Use `hermes cron create` with `--script` instead.
+- **A failed run's real cause is not in the cron output.** The scheduler reports only
+  `session ended without a final assistant message (lifecycle=interrupted) — booking run as
+  cron_incomplete_no_output`, and `hermes cron run <job>` prints a bare `Ran now: failed.` The
+  underlying error — provider `HTTP 402` insufficient credits, auth failure, `HTTP 500` — is in
+  `~/.hermes/logs/errors.log`. Read that file before doubting the job's wiring, the skill, or the
+  model routing: an out-of-credit provider fails *every* job while looking exactly like an agent bug,
+  and the jobs keep producing partial output that hides it.
+- **A job can report success and deliver nothing useful.** Grep the delivery receipt
+  (`delivered to telegram:<chat>`) rather than trusting the run status.
 
 ## 3. Linking Agents to a Kanban Board
 
@@ -189,3 +246,8 @@ Use consistent memory keys for cross-agent state:
 - **Length**: Max 1600 chars per WA (1 segment)
 - **CTA**: Soft, value-first, link at bottom
 - **Prefers GUI over CLI** – Default to `hermes dashboard` for monitoring, not terminal logs.
+- **Explaining architecture**: answer with one analogy held consistently through the whole reply,
+  plus a table per concept, and always a "who does what" table for any workflow. This user asks for
+  the same explanation more than once when it arrives as prose — a concrete roster (named agents with
+  schedules and duties) lands where an abstract description does not. Build the thing while explaining
+  it rather than explaining first and waiting for a go-ahead.

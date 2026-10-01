@@ -6,10 +6,14 @@ User runs one-person company selling Coway air purifiers via Smart Millionaire. 
 §
 VPS 194.127.192.52 (GreenCloud SG, Ubuntu 22.04, aaPanel :8888 admin_path=/, SSH :2222 key-only ~/.ssh/vps_key) is the REAL 24/7 host: hermes-gateway = systemd USER unit + linger=yes, profile default, runs the bots. PC gateway is secondary — PC off = jobs die.
 §
-VPS had 5 FAKE marketing cron jobs (hardcoded captions, invented analytics, empty stdout). Paused 2026-09-29. Always read ~/.hermes/scripts/*.sh before trusting a job's name.
+VPS old cron jobs were FAKE (hardcoded captions, invented analytics). Paused. Always read ~/.hermes/scripts/* before trusting a job name.
 §
-VPS sosmed division: skill sosmed-coway, board sosmed, prompts ~/.hermes/marketing/prompts/, wrappers ~/.hermes/scripts/sosmed_*.py, 6 cron jobs --deliver telegram (trend-scout 07:00, planner Mon 08:00, writer 09:00, visual-brief 10:00, analytics 20:00, community */30 8-20 Mon-Sat).
+VPS sosmed division: skill sosmed-coway, prompts ~/.hermes/marketing/prompts/, now superseded by profile dm (DM division, skill dm-coway, 8 agents dm-*).
 §
 Sync desktop↔VPS via GitHub leejuan99/hermes-sync (skills/ memories/ plugins/ SOUL.md only; config.yaml & .env stay per-machine). Desktop = config surface, VPS = runtime. Auto-pull cron on both.
 §
 Novamira WP MCP: sandbox wp-content/novamira-sandbox/ auto-loads ALL .php alphabetically; any echo/print pollutes the JSON-RPC stream → all MCP tools fail with 'jsonrpc version must be 2.0'.
+§
+VPS gateway: multiplex_profiles=true → ticks default+dm (verify: grep 'tick N profile(s) under multiplex' gateway.log). Each profile needs its OWN bot token — token lock blocks sharing one Telegram token. `hermes -p X cron status` false-negatives under multiplex.
+§
+VPS model = openrouter/deepseek-v3.2. OpenRouter credits are the single point of failure: HTTP 402 'requires more credits' killed 61 cron runs. Check errors.log for 402 before debugging anything else.

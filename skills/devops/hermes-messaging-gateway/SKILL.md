@@ -109,6 +109,39 @@ journalctl -u hermes-gateway -f
 # Telegram menu: 60 commands registered
 ```
 
+## Multiple profiles on one gateway (multiplex)
+
+A profile is a division: its own home under `profiles/<name>/` with its own memory, skills, sessions
+and cron jobs. One gateway can serve all of them instead of one gateway per profile.
+
+- Enable with `hermes config set gateway.multiplex_profiles true`, then restart the service.
+  `gateway.multiplex_profile_allowlist` no longer exists (config v43+): a multiplexing gateway serves
+  **every** profile under `profiles/`, so retire a profile by archiving or deleting it.
+- **Verify with the log, never with the per-profile status line.** Under multiplex,
+  `hermes -p <name> cron status` reports `✗ Gateway is not running — cron jobs will NOT fire` for
+  every secondary profile. That is a **false negative** — the check looks for a gateway launched with
+  that profile's home, and the multiplexed gateway launched as `default`. The jobs do fire. Confirm:
+
+  ```bash
+  grep 'tick .* profile(s) under multiplex' ~/.hermes/logs/gateway.log
+  # → Cron scheduler will tick 2 profile(s) under multiplex: ['default', 'dm']
+  ```
+
+  If that line names the profile, the setup is correct — do not start a second gateway to "fix"
+  the status line, or you get the polling conflict below.
+- **One bot token, one profile.** Adapters take a scoped lock on their credential, so two profiles
+  cannot share a bot token: the second silently fails to connect and the first starts seeing
+  `Conflict: terminated by other getUpdates request`. Differential-diagnose by checking whether the
+  platform variables are live (uncommented) in the profile's `.env`.
+- **`hermes profile create X --clone` copies `.env` but not the `platforms:` config section.**
+  Since platforms are usually enabled from `.env`, the clone silently claims the *same* bot as the
+  original. Before turning on multiplex, back up and comment the platform variables out of the
+  clone's `.env`, or give the clone its own bot.
+- **A profile with no platform credentials cannot report anywhere.**
+  `hermes -p <name> send -t telegram` fails with `Platform 'telegram' is not configured.`
+  A division that must send its own reports needs its own bot: create one with @BotFather
+  (`/newbot`) and put that token in the profile's `.env`. This is the intended shape, not a workaround.
+
 ## The bot answers with the wrong model
 
 `config.yaml`'s `model.default` is only the default for *new* sessions. Three independent pins decide
@@ -133,22 +166,34 @@ Full clear-and-restart recipe: `hermes-multimachine-sync` → `references/model-
 
 ## Marketing Automation Bots (Cron Jobs)
 
-- Create wrapper scripts in `~/.hermes/scripts` that SSH to VPS and run bot scripts.
-- Example wrapper for keyword-research:
-  ```bash
-  #!/usr/bin/env bash
-  ssh -p 2222 -i "~/ .ssh/vps_key" root@<VPS_IP> "/root/.hermes/scripts/keyword-research-bot.sh"
+Create the job **on the host that runs the gateway**. A job created on the desktop machine dies with
+that machine; an SSH wrapper that reaches the VPS from the desktop is strictly worse than creating
+the same job on the VPS.
+
+- Put wrapper scripts in the **owning profile's** scripts directory: `~/.hermes/scripts/` for
+  `default`, `~/.hermes/profiles/<name>/scripts/` for any other profile. `hermes cron create --script`
+  takes a bare filename and rejects absolute or home-relative paths.
+- A wrapper is any file that prints the prompt on stdout — a tiny Python reader is enough:
+
+  ```python
+  with open('/root/.hermes/marketing/prompts/dm/01-trend-scout.txt', 'r', encoding='utf-8') as f:
+      print(f.read())
   ```
-- Make wrapper executable: `chmod +x ~/.hermes/scripts/wrapper-*.sh`
-- Create cron jobs: `hermes cron create --name keyword-research --script wrapper-keyword-research.sh --no-agent "*/10 * * * *"` (repeat for other bots with appropriate schedules).
-- Test a job immediately: `hermes cron run <job_id>`
-- Verify logs and kanban board updates.
+
+  Generating wrappers with a here-doc loop *through SSH* mangles `$` expansion and produces
+  wrong-path scripts. Write the generator locally, `scp` it, then run it on the host.
+- Create the job from the runtime host:
+  `hermes -p <profile> cron create "<expr>" --name <job> --skill <skill> --script <file>.py --deliver telegram`
+- Test the wrapper itself before trusting the job (`python3 <wrapper>`), then `hermes cron run <job>`.
+- `--no-agent` delivers the script's stdout verbatim with **no model turn**. That is a notification
+  ping, not an agent. An agent job must not use it.
 
 ## Pitfalls
 
 - Ensure SSH key is authorized on VPS (`~/.ssh/authorized_keys`) and that the VPS SSH port (2222) is accessible.
 - When creating bot scripts on VPS, use proper variable quoting to avoid early expansion.
-- Cron jobs run in `--no-agent` mode; output is delivered directly; check logs for success/failure.
+- `--no-agent` output is delivered directly with no model turn; an agent job needs the model, so
+  check logs for success/failure instead of assuming the script's exit code is the whole story.
 - If a bot script fails, inspect its log in `~/.hermes/logs` and fix the script before re-running.
 - Keep webhook secret in sync between Hermes config and Sejoli plugin panel.
 
