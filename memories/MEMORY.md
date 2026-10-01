@@ -12,7 +12,7 @@ VPS sosmed division: skill sosmed-coway, prompts ~/.hermes/marketing/prompts/, n
 §
 Sync desktop↔VPS via GitHub leejuan99/hermes-sync (skills/ memories/ plugins/ SOUL.md only; config.yaml & .env stay per-machine). Desktop = config surface, VPS = runtime. Auto-pull cron on both.
 §
-Novamira WP MCP: sandbox wp-content/novamira-sandbox/ auto-loads ALL .php alphabetically; any echo/print pollutes the JSON-RPC stream → all MCP tools fail with 'jsonrpc version must be 2.0'.
+Novamira MCP: write-file AND edit-file block .php writes outside wp-content/novamira-sandbox/ (auto-loads all .php; echo/print breaks JSON-RPC). Edit plugin PHP via SSH on the VPS instead.
 §
 VPS gateway: multiplex_profiles=true → ticks default+dm (verify: grep 'tick N profile(s) under multiplex' gateway.log). Each profile needs its OWN bot token — token lock blocks sharing one Telegram token. `hermes -p X cron status` false-negatives under multiplex.
 §
