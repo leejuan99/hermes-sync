@@ -1051,14 +1051,14 @@
     "first_seen_at": null,
     "last_patched_at": "2026-09-30T06:00:16.687081+00:00",
     "last_reused_patch_generation": 2,
-    "last_used_at": "2026-09-30T10:56:14.278614+00:00",
-    "last_viewed_at": "2026-09-30T10:56:14.272783+00:00",
+    "last_used_at": "2026-10-01T05:39:12.209002+00:00",
+    "last_viewed_at": "2026-10-01T05:39:12.202325+00:00",
     "patch_count": 2,
     "patch_generation": 2,
     "pinned": false,
     "state": "active",
-    "use_count": 2,
-    "view_count": 2
+    "use_count": 3,
+    "view_count": 3
   },
   "n8n-workflow-automation": {
     "archived_at": "2026-09-16T07:33:48.651218+00:00",
