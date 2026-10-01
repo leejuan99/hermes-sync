@@ -111,6 +111,21 @@ mcp_servers:
 
 - **Credential format**: Always pass credentials via environment variables (`WP_API_URL`, `WP_API_USERNAME`, `WP_API_PASSWORD`). The `@automattic/mcp-wordpress-remote` package ignores CLI flags like `--url` or `--password`.
 
+## Connecting a NEW Site (no app password on hand)
+
+For a site you've never connected before (e.g. a subdomain like member.smartmillionaire.co.id — a SEPARATE WordPress install from the main domain, with its own DB prefix and credentials):
+
+1. **Find the admin username without auth**: `curl -sL -o /dev/null -w '%{redirect_url}' 'https://site/?author=1'` → redirects to `/author/<username>/`.
+2. **Generate an app password over SSH** (faster than walking the user through wp-admin):
+   ```bash
+   ssh -i ~/.ssh/vps_key -p 2222 root@VPS_IP \
+     "cd /www/wwwroot/site && wp user application-password create <user> 'Hermes MCP' --porcelain --allow-root 2>/dev/null"
+   ```
+   `--porcelain` prints ONLY the password. App passwords are per-install: the same username on two installs has DIFFERENT app passwords — test before assuming.
+3. **Verify credentials against the endpoint**: `curl -u 'user:pass' -o /dev/null -w '%{http_code}' https://site/wp-json/mcp/novamira` — valid Basic auth on the route listing returns 200; bare 401 = wrong creds. The MCP route itself is a streamable POST/GET/DELETE endpoint and 401s unauthenticated — that's normal, not a misconfiguration.
+4. **`hermes mcp add` prompts interactively** ("Enable all N tools? [Y/n/select]") — in a non-interactive shell this CANCELS and saves nothing. Pipe the answer: `printf 'y\n' | hermes mcp add <name> --command npx --env ... --args -y @automattic/mcp-wordpress-remote@latest`.
+5. New MCP tools load only in a new session or via `/reload-mcp`.
+
 ## Available Fluent CRM Abilities
 
 After connecting, these abilities are available via `mcp-adapter-execute-ability`:
@@ -334,6 +349,8 @@ You can also use the Novamira CLI tool directly to interact with the WordPress s
 | Large contact lists timeout | Use pagination (per_page=100), fetch in batches |
 | Deleted contacts still in list | Lists auto-clean on contact delete, but verify |
 | VPS WordPress not reachable | Use ngrok/cloudflare tunnel for local Hermes → VPS WordPress |
+| `hermes mcp add` silently cancels | The tool-selection prompt cancels when non-interactive — pipe `printf 'y\n' |` into it |
+| App password for one site fails on its subdomain | Each WP install has its own app passwords; generate one per install via WP-CLI |
 
 ## Session Artifacts
 
