@@ -48,6 +48,8 @@ Use `get_post_meta($id,'key',true)` for scalars (price, commission) and `get_pos
 
 Commissions are Carbon Fields "complex" (repeatable) fields, set at two levels and often empty at the product level (meaning: fall back to the group default). Full structure, example values, and the raw meta-key format: `references/commission-model.md`.
 
+**Sejoli is not the only engine paying on these orders.** This site also runs a custom MLM engine ('smart-binary' — see the `smart-binary-mlm` skill) that hooks `sejoli/order/set-status/completed` and pays its OWN commissions on the same orders, and that integration auto-approves Sejoli's own affiliate records (`status` 'pending'→'added' in `{prefix}sejolisa_affiliates`). One sale can therefore pay BOTH Sejoli's native affiliate commission AND the MLM stack — sum both before answering "what does this sale pay".
+
 ## Pitfalls
 
 - Product-level `_sejoli_commission` is empty on most products — don't conclude "no commission" without also checking the buyer's group (`_group_commissions` global tiers + `_group_setup_per_product` overrides).
