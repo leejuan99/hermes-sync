@@ -43,12 +43,22 @@ Use `get_post_meta($id,'key',true)` for scalars (price, commission) and `get_pos
 - `sejolisa_get_user_access_products($user_id)` — products a member has LUNAS access to. Use this for access checks; do NOT use `sejolisa_does_user_have_access()`, which calls `display_block_access()` → `wp_die()` → blank page when access is missing.
 - `sejolisa_get_orders(['user_id'=>..,'product_id'=>..])` — returns `['valid'=>bool,'orders'=>[...]]`; `status==='completed'` = LUNAS.
 - `sejolisa_carbon_get_post_meta($post_id, 'field')` — reads Carbon Fields complex meta (the canonical reader for commission fields).
+- Affiliate identity from an order: `sejolisa_get_order(['ID'=>$id])['orders']` carries `affiliate_id` + `affiliate_name` (display name, joined) + `product_id` + `status`. Affiliate phone is user meta — try keys `phone`, `user_phone`, `billing_phone`, `handphone`, `no_hp`, `whatsapp` in order; for wa.me links normalize by stripping non-digits and mapping `0…`→`62…`, `8…`→`628…`.
 
 ## Commission model
 
 Commissions are Carbon Fields "complex" (repeatable) fields, set at two levels and often empty at the product level (meaning: fall back to the group default). Full structure, example values, and the raw meta-key format: `references/commission-model.md`.
 
 **Sejoli is not the only engine paying on these orders.** This site also runs a custom MLM engine ('smart-binary' — see the `smart-binary-mlm` skill) that hooks `sejoli/order/set-status/completed` and pays its OWN commissions on the same orders, and that integration auto-approves Sejoli's own affiliate records (`status` 'pending'→'added' in `{prefix}sejolisa_affiliates`). One sale can therefore pay BOTH Sejoli's native affiliate commission AND the MLM stack — sum both before answering "what does this sale pay".
+
+## Confirm / thankyou page + custom HTML
+
+- `/confirm/?order_id=<id>` is a Sejoli **template**, not a WP page — `get_page_by_path('confirm')` returns null. It's rendered by `SejoliSA\Front\Confirm::display_confirm_page()` → `template/checkout/confirm.php`, and is the bank-transfer payment-confirmation form.
+- Per-product "Notifikasi" content (`product_notification_on_hold` / `payment_confirm` / `in_progress` / `completed` / `cancel` / `refund`, the "Notifikasi" tab) renders ONLY into email/WhatsApp templates via the `{{product-info}}` shortcode — it never appears on the web confirm/thankyou page. Its shortcodes include `{{affiliate-name}}`, `{{affiliate-phone}}`, `{{affiliate-email}}`, `{{commission}}`, `{{confirm-url}}`.
+- Sejoli Panel's "Product Extras" meta box (`_sjp_post_confirm_redirect` + `_sjp_notif_*`) is redirect + email/WA only, and its template vars are buyer-only (`{nama}` `{email}` `{phone}` `{produk}` `{total}` `{status}`) — no affiliate vars, so it can't drive an affiliate WhatsApp button.
+- There is **no stock field that renders custom HTML on the web `/confirm/` page**. A custom field was BUILT as mu-plugin `sm-confirm-custom-html.php` (meta box "Custom HTML Halaman Konfirmasi" on `sejoli-product`, stores `_sm_confirm_custom_html`; shortcodes `{{affiliate-name}}` `{{affiliate-phone}}` `{{affiliate-email}}` `{{buyer-name}}` `{{order-id}}` `{{product-name}}` `{{sitename}}` `{{siteurl}}`).
+- **Placement (owner-corrected): render the custom HTML in the SUCCESS box `.sejoli-complete-confirm`, not on the confirm form.** The buyer submits the payment-confirmation form first; only then does Sejoli's JS reveal that box. Implement by echoing a hidden source div + an inline script that appends its innerHTML into `.sejoli-complete-confirm` (it auto-shows/hides with the success message). Echoing straight into `wp_footer` shows it on the form page before submission — wrong.
+- Orphaned meta keys like `_sslm_*` (`content_shortcode_on_thankyou`, `redirect_on_thankyou`, `access_on_thankyou`) mean a "thankyou-customization" plugin was removed — values survive in the DB but nothing renders them.
 
 ## Pitfalls
 

@@ -87,6 +87,25 @@ Deploy via:
 
 Agent-added features live in `wp-content/novamira-sandbox/` alongside test files. Before concluding "this WordPress site doesn't do X", grep BOTH the sandbox AND `wp-content/mu-plugins/` (always-loaded custom code) — a feature can exist entirely outside the plugin that looks like the site's codebase. Example: a payout-cap guardrail implemented purely as a sandbox file (hooking `admin_notices` + the order-completed action) that has nothing to do with the main plugin.
 
+**A registered artifact with no matching source file is almost always a sandbox file.** Because sandbox `.php` auto-loads, it can register an admin menu, a shortcode or an AJAX action that no plugin/theme contains. When an admin menu item, shortcode or hook is clearly live but `grep -r` across `wp-content/plugins/`, `themes/` and `mu-plugins/` finds nothing, do NOT conclude it does not exist, and do NOT conclude an auditor hallucinated — the identifier is usually composed dynamically (`add_menu_page(..., 'sm-coach-settings', ...)`) or by concatenation (`'wp_ajax_sb_' . $name`). Dump the REGISTRATION instead of grepping the label:
+
+```php
+<?php // run: wp eval-file /tmp/list-admin-menus.php --allow-root
+wp_set_current_user( 1 );
+do_action( 'admin_menu' );
+global $menu, $submenu;
+foreach ( (array) $menu as $m ) {
+    if ( ! empty( $m[0] ) ) echo wp_strip_all_tags( $m[0] ) . '  [slug: ' . $m[2] . "]\n";
+}
+foreach ( (array) $submenu as $parent => $items ) {
+    foreach ( (array) $items as $i ) echo $parent . ' > ' . wp_strip_all_tags( $i[0] ) . '  [slug: ' . $i[2] . "]\n";
+}
+```
+
+The dump gives you the real slug; then grep the FLAT sandbox dir (`ls wp-content/novamira-sandbox/*.php` — the loader reads only the top level, not subdirs) for it.
+
+**To kill ONE feature that lives in a shared sandbox file, comment out its own `add_action` line — do not rename or delete the file.** A single sandbox file routinely bundles several unrelated features (an admin menu + a front-end JS injection + a CSS retheme). Renaming it to `.disabled` removes all of them, and a front-end feature can be load-bearing — e.g. a brand CSS override whose removal silently restyles a member dashboard. Comment the specific hook (`// add_action( 'admin_menu', 'x', 60 );`) and leave the rest of the file running, then re-dump the registrations to confirm it is gone.
+
 **Editing a sandbox file is higher-stakes than a plugin file:** it auto-loads on every request, so a syntax error white-screens the WHOLE site (and breaks the MCP JSON-RPC stream). Unlike the plugin SSH workflow below, `php -l` the LOCAL copy and confirm clean BEFORE scp — never rely on linting after push — and keep a copy to restore.
 
 **A persistent admin notice the site owner "can't delete"** is almost always an `admin_notices` hook in a custom/sandbox file with no dismiss handler. Fix it by adding the `is-dismissible` class + a nonce-protected dismiss/clear link — do not hunt the plugin for it.

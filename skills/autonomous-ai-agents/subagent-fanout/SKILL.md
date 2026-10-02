@@ -35,6 +35,7 @@ Large work that splits into INDEPENDENT modules — codebase audit, multi-module
 
 ## Pitfalls
 
+- **Late push clobbers — the invisible one.** A child that pulls its file copy EARLY and pushes LATE silently overwrites everything written to that file in between: another child's push, or your own orchestrator edits. Exclusive file ownership by design is NOT enough when two agents legitimately need the same file (e.g. a core-logic agent and a UI agent both touching the plugin's main class). Symptoms: a content search for an expected fix returns 0 after all children report success. **After every child finishes, verify PER FILE with one search marker per item** (not per summary) and re-apply anything missing yourself. If two children must share a file, serialize them (wave 1 then wave 2) or split by line range and re-verify both halves.
 - scp -r nested-directory surprise breaks every child's first reads at once — flatten and re-verify paths BEFORE dispatching.
 - Do not move/rename the source tree while children run; they cache discovered absolute paths and their next reads fail.
 - Cross-module duplicates inflate counts — dedupe before reporting totals to the user.

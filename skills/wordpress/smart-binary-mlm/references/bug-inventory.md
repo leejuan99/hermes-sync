@@ -39,4 +39,36 @@ money columns INT instead of DECIMAL (db.php:371); missing index rank_id/status 
 ## Verification notes
 
 - Never trust a [DISPATCHED] item as fixed: wave-1 fix agents' results must be verified on the VPS (php -l + smoke test) before updating to [FIXED].
-- Wave 2 (not yet dispatched at audit time): admin menu reorg by category + UI/UX redesign (user wants ui-ux-pro-max / design-taste-frontend / redesign-existing-projects applied, zero errors).
+- Wave 2 (admin menu reorg + UI/UX redesign) and wave 3 (integrity fixes) have since shipped, so the entries above are HISTORICAL; treat the re-audit below as the current state of the code.
+
+## Re-audit of the current code
+
+Rule: a re-audit re-reads the file — several wave-1 items were still reachable through a second code path, and a claim you cannot reproduce by reading the code is not a finding. Composed hook names (`'wp_ajax_sb_' . $name`) make greps miss live hooks; verify against the loop arrays.
+
+### CRITICAL (open)
+- **`SB_Webinar` does not exist anywhere in the plugin** — no `class-sb-webinar.php`, no autoloader entry — yet `class-sb-rest.php` calls `SB_Webinar::live_state / count_registrants / register_url / room_url / get_all / save / delete / get_registrants`. Every `/webinars` REST route is a fatal 500 and the admin Webinars page cannot load. `SB_Core` guards its own use with `class_exists()`; the REST layer does not. Ship the class or guard/short-circuit the routes.
+- **Sejoli order cancel reverses leg points on the WRONG row** — the add path credits only the buyer's ANCESTORS (the point-system walk starts at `parent_id`), but the cancel handler subtracts from the BUYER's own `sb_leg_points` row. Refunds corrupt the buyer's leg balances (clamped at 0) while the credited ancestor legs keep paying on refunded volume.
+- **`points_to_monetary()` mis-classifies money as points** — `return ( $bv < $per ) ? $bv * $per : $bv;` with `$per = point_per_amount` (100000). Sejoli passes POINTS (result correct), WooCommerce passes MONEY, so any Woo order under Rp 100.000 is multiplied by 100.000 (~99.999× overpay). Duplicated in `bonus-level.php` and `bonus-sponsor.php`. [HOLD with Woo]
+- **Direct 25% is wired into the SEJOLI path only** — `SB_Bonus_Direct::award()`'s sole caller is the Sejoli integration; `SB_Bonus_Engine::process_order()` (Woo/FluentCart) never calls it, so the headline bonus silently pays Rp 0 there. [HOLD with Woo]
+
+### HIGH (open)
+- `apply_caps()` reduces the PAID bonus, but `consume_pairs()` (bonus-pairing) still consumes the ORIGINAL pair count — points for unpaid pairs are destroyed. Consume only `floor($bonus / $pair_rate)` pairs.
+- Package `daily_cap_pairs` is enforced per pairing RUN, and pairing only runs weekly/monthly — a member can be capped at N pairs for a whole month while the label and the income simulator sell it as N pairs/DAY.
+- Held bonuses are released only from `SB_Subscription::activate()`, so bonuses held by the PV gate never reach the wallet when the member later qualifies.
+- `add_child` writes the parent's tree pointer with an unconditional UPDATE and no transaction — two concurrent signups can claim the same empty slot, orphaning a member whose `parent_id`/`position` then disagree with `sb_tree`.
+- `activate()` idempotency is a non-atomic SELECT-then-UPDATE — concurrent triggers double-award. Claim atomically first (`UPDATE ... WHERE status <> 'active'`, proceed only on rows_affected == 1).
+- Rank upgrade compares rank PRIMARY KEYS and hardcodes `1` instead of `sort_order`; `consecutive_months` is written only on a rank CHANGE, so any rule needing consecutive months is unreachable.
+- Modulo-by-zero: `% (int) sb_setting('pairing_left_bv',1)` — `sb_setting()` returns 0 for a stored 0, so saving 0 is a fatal `DivisionByZeroError` (gamification + the public dashboard). Clamp with `max(1, ...)`.
+- `SB_Seeder::clear()` TRUNCATEs 9 tables but omits 7 member-keyed ones; TRUNCATE resets AUTO_INCREMENT, so re-seeding leaks stale points/pairs/claims onto recycled member ids.
+- `propagate_bv()` builds the column name from `$member->position` — a null/empty position makes the SET clause malformed and the whole upline propagation fails silently.
+- Pool / royalty / team-pool write their idempotency guard row BEFORE the credit loop, so a mid-way crash permanently blocks the re-run and members stay underpaid.
+- `record_bonus()` marks a row `approved` (and notifies) even when the wallet credit fails.
+
+### Security + member-visible leaks
+- `ajax_search_sponsor()` was registered `nopriv` with NO nonce and NO capability → anonymous enumeration of member IDs + display names, plus email probing. Fixed by dropping the nopriv registration AND adding a nonce + login check inside the handler. [FIXED, verified on VPS]
+- `ajax_get_member_tree()` let ANY logged-in member pull their full downline (names/IDs/BV/status) with only the generic public nonce. Now gated with `current_user_can('manage_options')` — the network tree is admin-only. [FIXED, verified on VPS]
+- Activator auto-created member pages titled 'Daftar Member MLM' / 'Pohon Jaringan', and four shortcode buttons hard-coded `/daftar-member-mlm/`. Titles renamed in the activator, the live DB pages re-titled and re-slugged, and the links now resolve via `mlm_page_id('mlm_page_register')` + `get_permalink()`. [FIXED, verified on VPS]
+- `is_mlm_page()`'s shortcode list is stale (four unregistered shortcodes in, six real ones out), so `public.css`/`public.js` are not enqueued on pages using the real shortcodes and `[sb_affiliate_dashboard]` never leaves its loading spinner. `enqueue_tree_assets()` reads `sb_page_tree` while the activator writes `mlm_page_tree` → dead branch, plus D3 loaded from a CDN for a shortcode that renders no tree. [FIXED in wave 3 — verify]
+
+### Medium/low still open
+`min_payout` (readers) vs the old `min_withdrawal` key; `get_by_user()` ambiguous for shared-user triple bundles; `SB_Wallet::get_hold_balance()` surfaces `sb_hold_ledger` (company withholding) as the member's "Hold" while the real pending-payout figure (`sb_wallet.hold_balance`) is displayed nowhere; double `$wpdb->prepare()` on the members search (a `%` in the search term breaks placeholder binding); unbounded `SELECT user_id FROM sb_members` in both user-search paths; `export_payouts` formats every row with the default currency instead of each payout's own; `save_webinar` passes params unsanitized; `sb_bonuses` has no UNIQUE `(bonus_type, reference_id)` backstop; autoship reminder fires for every active member every day with no dedup; FluentCart refund reads `mlm_bv` that `on_order_paid()` never writes; `shortcode_atts` tag name in `join_button`; `$_GET` array params echoed into hidden inputs (PHP 8 warnings); `member-prospects` usort comparator never returns 0; `public/partials/member-tree.php` is dead code (no includer) but still ships the old MLM vocabulary and a dev banner.
