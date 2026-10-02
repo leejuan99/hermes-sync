@@ -30,11 +30,17 @@ member→Afiliasi/Partner · sponsor→partner perekrut · kaki kiri/kanan→Tim
 Copy: round bonus numbers (easy to tell), locked placement (1-2-1), tangible rewards ladder, tusuk-sate self-stacking. Avoid: unlimited-depth pairing (27%+ of join), uncapped rank royalty per-HU, matching 10+ generations, RO bonus >50% margin. Legal (AP2LI) != financially sustainable.
 
 ## Plugin file map (production VPS)
+
+**Admin nav has TWO layers — critical gotcha:** (1) WP submenu in admin/class-sb-admin.php, (2) Vue SPA in admin/js/app.js (the SPA is what the user actually navigates/hovers). Some page-*.php partials are ORPHANED dead code — e.g. slug `mlm-ranks` mounts the Vue SPA via SB_Admin::page_app, so admin/partials/page-ranks.php never renders; the labels users see live in app.js. Fix BOTH (or just app.js for live labels). admin/js/sidebar-extras.js is dead code (refers to window.mlmApp which no longer exists; the App template has no sidebar).
+
+**Cache busting:** app.css/app.js/sidebar-extras.js are enqueued with `?ver=SB_VERSION` — ANY change to a .js/.css file REQUIRES bumping SB_VERSION (and the Version header) in smart-binary.php, or browsers keep serving the stale asset. Menu/PHP changes need no bump.
+
 - SSH: `ssh -i ~/.ssh/vps_key -p 2222 -o StrictHostKeyChecking=no root@194.127.192.52`
 - Plugin: /www/wwwroot/member.smartmillionaire.co.id/wp-content/plugins/smart-binary
 - Dispatch: includes/bonuses/class-sb-bonus-engine.php. Core stack: bonus-direct/sponsor/pairing/matching. 13 other bonus classes = default-off candidates (disable via engine, never delete).
 - Points: includes/core/class-sb-point-system.php (sb_leg_points, period_key YYYY-MM). Rewards: sb_reward_defs has period_months column; reward race = pairs per period, reset at close.
-- Settings UI: admin/class-sb-settings.php get_bonus_fields() writes 'sb_settings' option (NOT 'mlm_settings' — that's a dead key).
+- Settings UI: admin/class-sb-settings.php get_bonus_fields() writes 'sb_settings' option (NOT 'mlm_settings' — that's a dead key). get_bonus_fields() sections carry a 'group' key ('active'|'other'|'arsip') that page-bonus-settings.php uses to render active bonuses prominently and disabled ones inside a collapsed archive.
+- Admin menu gotcha: submenu slugs like 'mlm-ranks', 'mlm-products', 'mlm-members' mount the Vue SPA via SB_Admin::page_app() + route_map() (admin/js/app.js). The matching admin/partials/page-*.php are OFTEN ORPHANED (registered method never wired to a menu) and never render. When changing what an admin sees, check the SPA template in app.js too — e.g. rank BV labels live in app.js, not page-ranks.php. Editing app.js needs a SB_VERSION bump for cache-bust.
 - Member area: public/class-sb-public.php + public/partials/* (tree hidden here; progress card instead). Admin tree: admin/partials/page-tree.php.
 
 ## Production fix protocol (MANDATORY)
