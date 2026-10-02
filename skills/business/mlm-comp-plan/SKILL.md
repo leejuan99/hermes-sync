@@ -31,6 +31,8 @@ Copy: round bonus numbers (easy to tell), locked placement (1-2-1), tangible rew
 
 ## Plugin file map (production VPS)
 
+**Admin menu (v1.0.6+, consolidated):** Dashboard, Members, Binary Tree, Ranks, Bonuses, Payouts, Products, Webinars, Notifications, Settings, **Pengaturan Program**. The last one is ONE WP submenu entry (slug `mlm-bonus-settings`, callback `page_program_settings()`) whose SIX tabs are internal `?page=mlm-bonus-settings&tab=<key>` links (keys: bonus, commission, packages, placement, triple-bundle, payout) — tabs are NOT WP submenu items. Config pages share `SB_Admin::config_styles()` (the SINGLE source of config-page CSS; admin/css/admin.css is NOT enqueued — only app.css is) and `config_section_header()`. Old direct slugs (mlm-packages / mlm-product-commission) no longer resolve. Placement/Triple-Bundle/Payout fields live in `SB_Settings::get_advanced_fields()` (moved out of get_fields()).
+
 **Admin nav has TWO layers — critical gotcha:** (1) WP submenu in admin/class-sb-admin.php, (2) Vue SPA in admin/js/app.js (the SPA is what the user actually navigates/hovers). Some page-*.php partials are ORPHANED dead code — e.g. slug `mlm-ranks` mounts the Vue SPA via SB_Admin::page_app, so admin/partials/page-ranks.php never renders; the labels users see live in app.js. Fix BOTH (or just app.js for live labels). admin/js/sidebar-extras.js is dead code (refers to window.mlmApp which no longer exists; the App template has no sidebar).
 
 **Cache busting:** app.css/app.js/sidebar-extras.js are enqueued with `?ver=SB_VERSION` — ANY change to a .js/.css file REQUIRES bumping SB_VERSION (and the Version header) in smart-binary.php, or browsers keep serving the stale asset. Menu/PHP changes need no bump.
