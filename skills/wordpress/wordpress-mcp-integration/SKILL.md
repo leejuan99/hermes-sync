@@ -351,6 +351,7 @@ You can also use the Novamira CLI tool directly to interact with the WordPress s
 | VPS WordPress not reachable | Use ngrok/cloudflare tunnel for local Hermes → VPS WordPress |
 | `hermes mcp add` silently cancels | The tool-selection prompt cancels when non-interactive — pipe `printf 'y\n' |` into it |
 | App password for one site fails on its subdomain | Each WP install has its own app passwords; generate one per install via WP-CLI |
+| `wp eval`/`eval-file` can't inspect the admin menu | `admin_menu` never fires in CLI, so `$menu`/`$submenu` are empty — verify menu registration by reading the plugin's menu-registration code or loading wp-admin in a browser, not via wp eval |
 
 ## Session Artifacts
 
