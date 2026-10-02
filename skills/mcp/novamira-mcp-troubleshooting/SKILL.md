@@ -83,6 +83,14 @@ Deploy via:
 3. **Use `000_` prefix for bootstrap/cleanup files** that must run first
 4. **Test MCP after any sandbox write**: `hermes mcp test <server>`
 
+## The sandbox also hosts REAL features (not just test files)
+
+Agent-added features live in `wp-content/novamira-sandbox/` alongside test files. Before concluding "this WordPress site doesn't do X", grep BOTH the sandbox AND `wp-content/mu-plugins/` (always-loaded custom code) — a feature can exist entirely outside the plugin that looks like the site's codebase. Example: a payout-cap guardrail implemented purely as a sandbox file (hooking `admin_notices` + the order-completed action) that has nothing to do with the main plugin.
+
+**Editing a sandbox file is higher-stakes than a plugin file:** it auto-loads on every request, so a syntax error white-screens the WHOLE site (and breaks the MCP JSON-RPC stream). Unlike the plugin SSH workflow below, `php -l` the LOCAL copy and confirm clean BEFORE scp — never rely on linting after push — and keep a copy to restore.
+
+**A persistent admin notice the site owner "can't delete"** is almost always an `admin_notices` hook in a custom/sandbox file with no dismiss handler. Fix it by adding the `is-dismissible` class + a nonce-protected dismiss/clear link — do not hunt the plugin for it.
+
 ## File-Tool PHP Restriction (write/edit blocked outside sandbox)
 
 Both `novamira/write-file` and `novamira/edit-file` refuse `.php` writes anywhere except `wp-content/novamira-sandbox/`. Trying to write or edit a real plugin/theme `.php` file fails with `insufficient_scope` / `php_sandbox_required` (403) — by design, Novamira will not let an agent inject arbitrary PHP into a production plugin. Only non-PHP files (CSS/JS/templates) can be written outside the sandbox.
