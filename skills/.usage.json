@@ -1165,14 +1165,14 @@
     "created_by": "agent",
     "last_patched_at": "2026-10-02T04:59:10.022986+00:00",
     "last_reused_patch_generation": 4,
-    "last_used_at": "2026-10-02T09:46:26.614682+00:00",
-    "last_viewed_at": "2026-10-02T09:46:26.608237+00:00",
+    "last_used_at": "2026-10-02T10:04:08.540646+00:00",
+    "last_viewed_at": "2026-10-02T10:04:08.534118+00:00",
     "patch_count": 7,
     "patch_generation": 4,
     "pinned": false,
     "state": "archived",
-    "use_count": 10,
-    "view_count": 10
+    "use_count": 11,
+    "view_count": 11
   },
   "novamira_setup": {
     "archived_at": null,
@@ -1532,16 +1532,16 @@
     "created_at": "2026-10-01T13:18:12.184123+00:00",
     "created_by": "agent",
     "first_seen_at": null,
-    "last_patched_at": "2026-10-02T09:46:54.908227+00:00",
-    "last_reused_patch_generation": 4,
-    "last_used_at": "2026-10-02T09:46:08.303925+00:00",
-    "last_viewed_at": "2026-10-02T09:46:08.297871+00:00",
-    "patch_count": 6,
-    "patch_generation": 6,
+    "last_patched_at": "2026-10-02T10:05:17.437236+00:00",
+    "last_reused_patch_generation": 6,
+    "last_used_at": "2026-10-02T10:04:24.180696+00:00",
+    "last_viewed_at": "2026-10-02T10:04:24.173584+00:00",
+    "patch_count": 8,
+    "patch_generation": 8,
     "pinned": false,
     "state": "active",
-    "use_count": 6,
-    "view_count": 5
+    "use_count": 7,
+    "view_count": 6
   },
   "server-automation-telegram-n8n": {
     "archived_at": "2026-09-16T07:33:55.547622+00:00",
