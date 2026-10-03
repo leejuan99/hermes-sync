@@ -1,0 +1,89 @@
+{
+  "bundle_hash": "sha256:daa88532b883bc7cea42d50e8f741b0bd5ff4cbddfaf6624a16e3095d84cf3a1",
+  "scanner_version": "skills-guard-v8",
+  "source": "official",
+  "source_url": "official/mlops/inference/serving-llms-vllm",
+  "verdict": "caution",
+  "trust_level": "builtin",
+  "findings": [
+    {
+      "pattern_id": "unpinned_pip_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "SKILL.md",
+      "line": 27,
+      "match": "pip install vllm",
+      "description": "pip install without version pinning"
+    },
+    {
+      "pattern_id": "unpinned_pip_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "SKILL.md",
+      "line": 104,
+      "match": "pip install locust",
+      "description": "pip install without version pinning"
+    },
+    {
+      "pattern_id": "unpinned_pip_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "references\\optimization.md",
+      "line": 164,
+      "match": "pip install locust",
+      "description": "pip install without version pinning"
+    },
+    {
+      "pattern_id": "unpinned_pip_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "references\\quantization.md",
+      "line": 204,
+      "match": "pip install autoawq",
+      "description": "pip install without version pinning"
+    },
+    {
+      "pattern_id": "unpinned_pip_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "references\\quantization.md",
+      "line": 213,
+      "match": "pip install auto-gptq",
+      "description": "pip install without version pinning"
+    },
+    {
+      "pattern_id": "unpinned_pip_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "references\\server-deployment.md",
+      "line": 18,
+      "match": "RUN pip install vllm",
+      "description": "pip install without version pinning"
+    },
+    {
+      "pattern_id": "unpinned_pip_install",
+      "severity": "medium",
+      "category": "supply_chain",
+      "file": "references\\troubleshooting.md",
+      "line": 193,
+      "match": "pip install flash-attn --no-build-isolation",
+      "description": "pip install without version pinning"
+    },
+    {
+      "pattern_id": "sudo_usage",
+      "severity": "high",
+      "category": "privilege_escalation",
+      "file": "references\\troubleshooting.md",
+      "line": 222,
+      "match": "sudo ufw allow 8000",
+      "description": "uses sudo (privilege escalation)"
+    }
+  ],
+  "rules": [
+    "sudo_usage",
+    "unpinned_pip_install"
+  ],
+  "scanned_at": "2026-10-03T11:54:09.710149+00:00",
+  "summary": "serving-llms-vllm: caution \u2014 8 finding(s) in privilege_escalation, supply_chain",
+  "fresh": true
+}
