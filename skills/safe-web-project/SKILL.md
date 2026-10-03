@@ -48,3 +48,4 @@ description: Clone, scan, install, and run a web project safely.
 - **Do not confuse npm audit warnings with malware** – moderate/high vulnerabilities in dev dependencies (e.g., esbuild, vite) are common and not indicative of a virus; only block if you find actual malicious code patterns.
 - **If the repo uses a different package manager** (yarn, pnpm), adjust the install and run commands accordingly.
 - **Some projects may require environment variables**; check README for any required setup before running.
+- **If the repo claims to be a directory of APIs or code examples**, expect mostly documentation (`.md`, `.txt`) and example snippets (`.js`, `.ts`, `.py`, `.sh` in `code-examples/`). Presence of compiled binaries (`.exe`, `.dll`), obscure scripts, or large obfuscated blobs (e.g., long base64 strings) warrants deeper inspection.
