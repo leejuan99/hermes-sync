@@ -25,9 +25,10 @@ Connect and debug Hermes gateway chat platforms from the desktop app.
 
 ## Verify state before guessing
 
-- Check `gateway_state.json` (`platforms.whatsapp.state`) for `connected` vs error before touching config.
+- Check `gateway_state.json` (`platforms.telegram.state` / `platforms.whatsapp.state`) for `connected` vs error before touching config; `gateway_state.json` is the source of truth, not `hermes -p <name> cron status` under multiplex.
 - Check `whatsapp/bridge.log` for `Bridge ready (status: connected)` and per-message `event` lines.
 - Telegram `polling conflict` and `API_SERVER_KEY required` errors do not block WhatsApp; ignore them when only WhatsApp matters.
+- Explicit `platforms.telegram.enabled: false` in `config.yaml` silently disables Telegram even when `TELEGRAM_BOT_TOKEN` is set in `.env` — the log says `Platform 'telegram' is explicitly disabled ... will NOT start its adapter`. Fix with `hermes config set platforms.telegram.enabled true` then `hermes gateway restart`.
 - Never run Linux panel commands (aaPanel paths) inside Windows PowerShell; they always fail with CommandNotFound.
 - One active gateway per WhatsApp session: check for an already-running `gateway run`
   process before starting another; duplicates cause Telegram polling conflicts and
@@ -163,6 +164,21 @@ The chat `/model` menu is also a trap: it lists Hermes' *built-in* providers, so
 multi-megabyte caches return model ids that only *look* like settings.
 
 Full clear-and-restart recipe: `hermes-multimachine-sync` → `references/model-routing.md`.
+
+## Routing a bot to 9Router
+
+To route any Telegram/WhatsApp bot through 9Router instead of OpenRouter/Command Code:
+
+```bash
+hermes config set model.provider 9router
+hermes config set model.base_url https://9router.smartmillionaire.co.id/v1
+hermes config set model.default 9router_combo_1
+hermes config set model.key_env HERMES_CUSTOM_9ROUTER_API_KEY
+# Telegram toggle is independent — env token is ignored when disabled:
+hermes config set platforms.telegram.enabled true
+hermes gateway restart
+```
+Verify: `curl -H "Authorization: Bearer $HERMES_CUSTOM_9ROUTER_API_KEY" https://9router.smartmillionaire.co.id/v1/models` lists `9router_combo_1`; `cat ~/.hermes/gateway_state.json` shows `platforms.telegram.state: "connected"` and `model.default: 9router_combo_1`. The session pin in `state.db` (`sessions.model`) and `sessions.json` (`model_override` from `/model`) overrides `config.yaml` for live chats — send `/new` in Telegram to start a fresh session on the new model. Discover other 9Router models with `curl -H "Authorization: Bearer $HERMES_CUSTOM_9ROUTER_API_KEY" https://9router.smartmillionaire.co.id/v1/models | jq .data[].id`.
 
 ## Marketing Automation Bots (Cron Jobs)
 
