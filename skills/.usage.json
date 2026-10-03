@@ -660,14 +660,14 @@
     "created_by": null,
     "last_patched_at": "2026-09-29T15:18:54.119729+00:00",
     "last_reused_patch_generation": 1,
-    "last_used_at": "2026-10-03T04:22:10.304391+00:00",
-    "last_viewed_at": "2026-10-03T04:22:10.298280+00:00",
+    "last_used_at": "2026-10-03T13:51:51.891175+00:00",
+    "last_viewed_at": "2026-10-03T13:51:51.883335+00:00",
     "patch_count": 1,
     "patch_generation": 1,
     "pinned": false,
     "state": "active",
-    "use_count": 30,
-    "view_count": 30
+    "use_count": 31,
+    "view_count": 31
   },
   "hermes-agent-skill-authoring": {
     "archived_at": "2026-09-16T07:33:44.220999+00:00",
@@ -834,14 +834,14 @@
     "first_seen_at": null,
     "last_patched_at": null,
     "last_reused_patch_generation": 0,
-    "last_used_at": null,
-    "last_viewed_at": null,
+    "last_used_at": "2026-10-03T13:56:47.904653+00:00",
+    "last_viewed_at": "2026-10-03T13:56:47.895720+00:00",
     "patch_count": 0,
     "patch_generation": 0,
     "pinned": false,
     "state": "active",
-    "use_count": 0,
-    "view_count": 0
+    "use_count": 1,
+    "view_count": 1
   },
   "implement-spec": {
     "archived_at": null,
@@ -894,13 +894,13 @@
     "first_seen_at": null,
     "last_patched_at": "2026-09-30T10:22:05.909436+00:00",
     "last_reused_patch_generation": 1,
-    "last_used_at": "2026-10-03T13:15:14.988022+00:00",
+    "last_used_at": "2026-10-03T13:49:02.924529+00:00",
     "last_viewed_at": "2026-10-03T13:15:14.981739+00:00",
     "patch_count": 1,
     "patch_generation": 1,
     "pinned": false,
     "state": "active",
-    "use_count": 4,
+    "use_count": 5,
     "view_count": 4
   },
   "jupyter-live-kernel": {
@@ -994,6 +994,22 @@
     "patch_count": 0,
     "pinned": false,
     "state": "archived",
+    "use_count": 0,
+    "view_count": 0
+  },
+  "mcp-server-setup": {
+    "archived_at": null,
+    "created_at": "2026-10-03T13:52:13.776258+00:00",
+    "created_by": "agent",
+    "first_seen_at": null,
+    "last_patched_at": null,
+    "last_reused_patch_generation": 0,
+    "last_used_at": null,
+    "last_viewed_at": null,
+    "patch_count": 0,
+    "patch_generation": 0,
+    "pinned": false,
+    "state": "active",
     "use_count": 0,
     "view_count": 0
   },
