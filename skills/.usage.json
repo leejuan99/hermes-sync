@@ -1565,15 +1565,15 @@
     "created_by": "agent",
     "first_seen_at": null,
     "last_patched_at": "2026-10-02T10:05:17.437236+00:00",
-    "last_reused_patch_generation": 6,
-    "last_used_at": "2026-10-02T10:04:24.180696+00:00",
-    "last_viewed_at": "2026-10-02T10:04:24.173584+00:00",
+    "last_reused_patch_generation": 8,
+    "last_used_at": "2026-10-05T03:43:56.413119+00:00",
+    "last_viewed_at": "2026-10-05T03:43:56.406928+00:00",
     "patch_count": 8,
     "patch_generation": 8,
     "pinned": false,
     "state": "active",
-    "use_count": 7,
-    "view_count": 6
+    "use_count": 10,
+    "view_count": 7
   },
   "server-automation-telegram-n8n": {
     "archived_at": "2026-09-16T07:33:55.547622+00:00",
