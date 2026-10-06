@@ -165,6 +165,45 @@ multi-megabyte caches return model ids that only *look* like settings.
 
 Full clear-and-restart recipe: `hermes-multimachine-sync` → `references/model-routing.md`.
 
+## Gemini model/provider setup for Telegram bot
+
+If you want to use Google Gemini models for your Telegram bot, follow these steps:
+
+1. Set model and provider in `~/.hermes/config.yaml`:
+   ```yaml
+   model:
+     default: gemini-3.5-flash   # or any available Gemini model
+     provider: google
+   ```
+2. Ensure the Google/OpenAI‑compatible endpoint is correct:
+   ```
+   providers:
+     google:
+       base_url: https://generativelanguage.googleapis.com/v1beta/openai
+       key_env: GEMINI_API_KEY
+   ```
+3. In `~/.hermes/.env`, uncomment and set:
+   ```
+   GEMINI_API_KEY=your_actual_gemini_key_here
+   GEMINI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai
+   ```
+4. Clear any existing session overrides that may force a different model:
+   - Delete `~/.hermes/sessions/sessions.json` (or rename it) to let the gateway create a fresh session file.
+   - Or, via SQLite: `sqlite3 ~/.hermes/state.db "UPDATE sessions SET model_override = NULL WHERE source = 'telegram';"`
+   - Then set the correct model and model_config for Telegram sessions:
+     ```
+     sqlite3 ~/.hermes/state.db "UPDATE sessions SET model = 'gemini-3.5-flash', model_config = '{'gateway_runtime': {'provider': 'google', 'base_url': 'https://generativelanguage.googleapis.com/v1beta/openai', 'api_mode': 'chat_completions', 'fallback_active': false}, 'model': 'gemini-3.5-flash', 'provider': 'google'}' WHERE source = 'telegram';"
+     ```
+5. Restart the gateway so the new configuration is loaded:
+   ```
+   systemctl --user restart hermes-gateway
+   ```
+   (This command requires user approval; run it when prompted.)
+6. Verify the bot is using Gemini:
+   - Send a test message to the Telegram bot.
+   - Or run `hermes -z "test"` and check the response.
+   - If you still see API key errors, double‑check that the `.env` file contains the correct key and that there are no leading/trailing spaces.
+
 ## Routing a bot to 9Router
 
 To route any Telegram/WhatsApp bot through 9Router instead of OpenRouter/Command Code:

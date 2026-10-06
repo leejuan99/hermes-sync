@@ -1,0 +1,11 @@
+# Example Hermes config.yaml for VPS with Gemini provider
+model:
+  default: gemini-3.5-flash
+  provider: google
+
+providers:
+  google:
+    base_url: https://generativelanguage.googleapis.com/v1beta/openai
+    key_env: GEMINI_API_KEY
+
+# ... rest of config as needed
