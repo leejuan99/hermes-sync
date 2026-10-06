@@ -141,6 +141,49 @@ gateway (`hermes gateway restart`) if the bots need them.
   paste either into a chat transcript; rotate the secret at developers.facebook.com → Settings →
   Basic if it leaks, then re-run `hermes mcp login meta-ads`.
 
+## Querying campaigns & performance (pattern proven 2026-10)
+
+Use `ads_get_ad_entities` as the metrics source — `ads_insights_*` tools are trend/anomaly only and take no date range.
+
+### Smoke test then query
+
+1. `ads_get_ad_accounts` (with a 20-char `client_conversation_id` — same value for the whole conversation) and check `is_ads_mcp_enabled` + `is_queryable` per account. If `false`, surface `is_ads_mcp_disabled_reason` and stop — that account is still in Meta's gradual rollout, not a config error.
+2. `ads_get_ad_entities` at `level=campaign` (or `adset`/`ad`). Required: `ad_account_id`, `client_conversation_id`, `advertiser_request` verbatim from the user. Reuse the same `client_conversation_id` across the conversation.
+
+### Fields that work for spend / sales / ROAS
+
+```
+fields: [id, name, amount_spent, omni_purchase, omni_purchase_values, cost_per_omni_purchase, purchase_roas, impressions, clicks]
+```
+
+- `amount_spent.value` = spend (string, unit IDR).
+- `omni_purchase` = sales count (string integer).
+- `omni_purchase_values.value` = omzet / conversion value (what ROAS is computed from). Request it explicitly — `purchase_roas` alone does not return the numerator.
+- `cost_per_omni_purchase.value` = CPP. Do not use `cost_per_result` at campaign level without `ads_get_field_context`.
+
+### Filtering & time slicing
+
+- Filter by name: `filtering: [{"field":"name","operator":"CONTAIN","value":["Sales - Affiliate Air Minum"]}]` — verify filterable via `ads_get_field_context` before adding new fields.
+- Today: `date_preset: "today"`.
+- Range with daily rows: `time_range: '{"since":"YYYY-MM-DD","until":"YYYY-MM-DD"}'` + `time_increment: "1"` — without `time_increment` you get a single aggregated row.
+- Omit `time_range`/`date_preset` defaults to last 28 days aggregated.
+
+### Raw-data requests
+
+When the user says "tampilkan data mentahnya", return the MCP JSON verbatim (ad_accounts / ad_entities) and then add a short human table underneath — do not summarize away the raw payload.
+
+### Pitfalls
+
+- Never `curl https://mcp.facebook.com/ads` to prove connectivity — it returns 401/404 by design; only the MCP OAuth flow works. Use the MCP tool as the probe.
+- Do not mix `date_preset` and `time_range` in one call.
+- `is_ads_mcp_enabled:false` is Meta-side rollout gating — no local fix; check the other account under the same Business Manager (e.g. Smart Millionaire 1497110470872963 was enabled while Lee Juan 1329252664335404 was not).
+- Always verify account timezone first with `level=ad_account` field `timezone_name` before interpreting "hari ini" — Smart Millionaire is `Asia/Jakarta`; answer dates/times in WIB, state the date explicitly (e.g. "5 Okt 2026 WIB"), and resolve "today" via `TZ='Asia/Jakarta' date +%Y-%m-%d` on every call — never assume UTC or server UTC.
+- Prefer explicit `time_range: '{"since":"YYYY-MM-DD","until":"YYYY-MM-DD"}'` in Asia/Jakarta when the user says "hari ini" or "dr tgl 1" — `date_preset:today` follows account timezone but is not auditable in logs; explicit range prevents UTC vs WIB confusion. For cron report jobs, compute the date inside the job with `TZ='Asia/Jakarta' date +%Y-%m-%d` on every tick — do not hardcode the date at creation time.
+- Cron `schedule` on this gateway is evaluated in gateway local time (WIB, `+07:00`) — `0 18 * * *` means 18:00 WIB directly; do not apply an extra UTC→WIB offset (11 UTC = 18 WIB is wrong here).
+- Treat `omni_purchase:null` with `amount_spent>0` as attribution delay, not zero sales — Meta purchase events lag 30-60 min intraday; report as "belum ke-track / delay" and re-query later instead of claiming 0 sales.
+- At adset level `campaign_name` is not filterable — fetch all adsets for the date and filter client-side by `campaign_id`, or filter at `level=campaign` with `name CONTAIN`; do not pass `campaign_name` in `filtering`.
+- High CTR (8-20%) with 0 `omni_purchase` signals clickbait creative, not success — always evaluate `CVR = omni_purchase / clicks` and `CPP` alongside CTR/CPM before recommending scale.
+
 ## Useful references
 
 - Meta's own docs: https://developers.facebook.com/documentation/mcp
