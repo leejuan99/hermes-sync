@@ -7,6 +7,9 @@ description: Set up and test a Telegram bot with Hermes Agent.
 
 Use when you need to set up and test a Telegram bot via Hermes Agent, including installing the telegram-messaging skill, configuring webhook, sending/receiving messages, and integrating with cron jobs.
 
+Always-on rules:
+- Avoid using the word 'wee' in replies; use standard Indonesian.
+
 ## Procedure
 
 1. Install the telegram-messaging skill:
@@ -60,6 +63,26 @@ Use when you need to set up and test a Telegram bot via Hermes Agent, including 
    ```
 
 10. Integrate with cron jobs: create scripts in `~/.hermes/scripts/` and schedule with `hermes cron create`.
+
+## Procedure for fixing Telegram model/provider issues
+
+1. SSH into VPS.
+2. Check current config: `cat /root/.hermes/config.yaml` under model and provider.
+3. Ensure provider block exists for 9router (api, name, api_key, models). If missing, add:
+   ```
+   providers:
+     9router:
+       base_url: https://9router.smartmillionaire.co.id/v1
+       key_env: HERMES_CUSTOM_9ROUTER_API_KEY
+   ```
+4. Set model.default to desired (e.g., openrouter/nvidia/nemotron-3-super-120b-a12b:free) and provider: 9router.
+5. Clear session overrides: move sessions.json to backup and clear model_override in state.db (or run cleanup script).
+6. Restart gateway: `systemctl --user restart hermes-gateway`.
+7. Verify: run `hermes -z "Test"` and check logs for errors.
+8. If still failing, check for free model overrides in sessions/sessions.json and state.db; remove them.
+9. Ensure cron sync (hermes-sync.sh) is active if needed.
+
+Note: Always backup config.yaml before editing.
 
 ## Pitfalls
 
