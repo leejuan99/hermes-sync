@@ -524,4 +524,63 @@ async function sendAlert(severity, message, details) {
 
 ---
 
+## Test Section
+
+`code`
+
+## Troubleshooting
+
+### Symptoms
+- Test
+
+## Troubleshooting Model & Provider Issues
+
+### Symptoms
+- Bot returns errors like "Unsupported model mimo-auto" or "Please pass a valid API key"
+- Logs show repeated API call failures with model/provider mismatch
+- `/model` command in Telegram shows unavailable models
+
+## Troubleshooting Model & Provider Issues
+
+### Symptoms
+- Bot returns errors like "Unsupported model mimo-auto" or "Please pass a valid API key"
+- Logs show repeated API call failures with model/provider mismatch
+- `/model` command in Telegram shows unavailable models
+
+### Resolution Steps
+## Troubleshooting Model & Provider Issues
+
+### Symptoms
+- Bot returns errors like "Unsupported model mimo-auto" or "Please pass a valid API key"
+- Logs show repeated API call failures with model/provider mismatch
+- `/model` command in Telegram shows unavailable models
+
+### Resolution Steps
+1. **Clear session overrides**
+   - Remove any `model_override` entries from `~/.hermes/sessions/sessions.json` and `state.db` for the Telegram session.
+   - Example SQL: `DELETE FROM gateway_routing WHERE session_key = 'agent:main:telegram:dm:<chat_id>';`
+   - Then edit `sessions.json` to delete the `model_override` block for the session.
+
+## Troubleshooting Model & Provider Issues
+
+### Symptoms
+- Bot returns errors like "Unsupported model mimo-auto" or "Please pass a valid API key"
+- Logs show repeated API call failures with model/provider mismatch
+- `/model` command in Telegram shows unavailable models
+
+### Resolution Steps
+1. **Clear session overrides**
+   - Remove any `model_override` entries from `~/.hermes/sessions/sessions.json` and `state.db` for the Telegram session.
+   - Example SQL: `DELETE FROM gateway_routing WHERE session_key = 'agent:main:telegram:dm:<chat_id>';`
+   - Then edit `sessions.json` to delete the `model_override` block for the session.
+
+2. **Verify config.yaml**
+   - Ensure `model.default` is set to a valid model (e.g., `gemini-3.5-flash`).
+   - Ensure `provider` matches the model (e.g., `google` for Gemini models).
+   - Check that the provider block exists with correct `base_url` and `key_env`.
+
 *Telegram Bot Skill - Part of Claude Office Skills*
+
+Test line 2
+
+Test line
