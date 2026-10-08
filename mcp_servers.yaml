@@ -2,12 +2,12 @@ mcp_servers:
   novamira-smartmillionaire:
     command: npx
     args:
-      - -y
-      - '@automattic/mcp-wordpress-remote@latest'
+    - -y
+    - '@automattic/mcp-wordpress-remote@latest'
     env:
       WP_API_URL: https://smartmillionaire.co.id/wp-json/mcp/novamira
       WP_API_USERNAME: yudira
-      WP_API_PASSWORD: BtFh...yojG
+      WP_API_PASSWORD: BtFhYh0Z12xvUsSBvmMEyojG
     enabled: true
   make:
     type: http
@@ -24,21 +24,21 @@ mcp_servers:
     enabled: false
     tools:
       exclude:
-        - diagram_create
-        - diagram_get_dsl
-        - layout_create
-        - layout_get_dsl
-        - layout_read
-        - layout_update
+      - diagram_create
+      - diagram_get_dsl
+      - layout_create
+      - layout_get_dsl
+      - layout_read
+      - layout_update
   novamira-leejuan-com:
     command: npx
     args:
-      - -y
-      - '@automattic/mcp-wordpress-remote@latest'
+    - -y
+    - '@automattic/mcp-wordpress-remote@latest'
     env:
       WP_API_URL: https://leejuan.com/wp-json/mcp/novamira
       WP_API_USERNAME: leejuan
-      WP_API_PASSWORD: 8R8L...oUSD
+      WP_API_PASSWORD: 8R8LfKTrlLTIpnka0AiWoUSD
     enabled: true
   meta-ads:
     url: https://mcp.facebook.com/ads
@@ -47,9 +47,23 @@ mcp_servers:
     type: http
     oauth:
       client_id: '2176994976587862'
-      client_secret: fc0d...730a
-      scope: ads_management ads_read business_management pages_show_list 
-        pages_manage_ads pages_read_engagement
+      client_secret: fc0d0c8610be9c8b31d4946d3677730a
+      scope: ads_management ads_read business_management pages_show_list pages_manage_ads pages_read_engagement
       redirect_host: localhost
       redirect_port: 8765
+      timeout: 900
     protocol: legacy
+  novamira-member:
+    command: npx
+    args:
+    - -y
+    - '@automattic/mcp-wordpress-remote@latest'
+    env:
+      WP_API_URL: https://member.smartmillionaire.co.id/wp-json/mcp/novamira
+      WP_API_USERNAME: leejuan
+      WP_API_PASSWORD: aPQVTSYrCBGDiJrb5RG7LLgq
+    enabled: true
+  canva:
+    url: https://mcp.canva.com/mcp
+    auth: oauth
+    enabled: true

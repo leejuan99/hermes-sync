@@ -1,34 +1,38 @@
 #!/usr/bin/env python
-"""Re-apply the Meta Ads MCP compatibility patch after a Hermes update.
+"""Keep Meta's hosted MCP servers working with the `mcp` Python SDK Hermes ships.
 
 Why this exists
 ---------------
-Hermes talks to remote MCP servers through the `mcp` Python SDK. mcp 2.0.0's
-`send_raw_request` always writes a `_meta` key into the JSON-RPC params:
+mcp 2.0.0's `send_raw_request` always writes a `_meta` key into the JSON-RPC params:
 
     out_params["_meta"] = out_meta     # {} when there is no progress token
 
-Meta's hosted MCP servers (https://mcp.facebook.com/ads and friends) reject that
-empty object with HTTP 400 / JSON-RPC -32602:
+Meta's hosted MCP servers (https://mcp.facebook.com/ads and friends) reject that empty
+object with HTTP 400 / JSON-RPC -32602:
 
     "meta" for Request must be an dict or null.
 
-Every request (initialize, tools/list, tools/call) fails, so the server looks
-unreachable. Sending no `_meta` at all is accepted, hence this patch:
+Every request (initialize, tools/list, tools/call) fails, so the server looks unreachable.
+Sending no `_meta` at all is accepted, hence this patch:
 
     if out_meta:
         out_params["_meta"] = out_meta
 
-It is safe for other servers: a non-empty `_meta` (e.g. a progressToken) is still
-written exactly as before.
+A non-empty `_meta` (e.g. a progressToken) is written exactly as before, so no other server
+is affected.
+
+Why it must run on EVERY host, repeatedly
+-----------------------------------------
+The patched file lives in site-packages, which is per-machine and outside HERMES_HOME on a
+server install (/usr/local/lib/hermes-agent/venv). A Hermes update can restore the unfixed
+file. So: run it on each host, and leave it on a timer (every 6h is plenty). It is a no-op
+when everything is already patched.
 
 Usage
 -----
-    python patch_mcp_empty_meta.py           # apply (idempotent)
-    python patch_mcp_empty_meta.py --check   # report only
-
-Run it after `hermes update` if the Meta Ads (or any Meta-hosted) MCP server
-starts failing with "HTTP 400 from POST https://mcp.facebook.com/ads" again.
+    python patch_mcp_empty_meta.py            # apply (idempotent)
+    python patch_mcp_empty_meta.py --check    # report only
+    python patch_mcp_empty_meta.py --root /usr/local/lib/hermes-agent
 """
 from __future__ import annotations
 
@@ -38,8 +42,10 @@ import shutil
 import sys
 from pathlib import Path
 
+ORIGINAL = 'out_params["_meta"] = out_meta'
 
-def _default_home() -> Path:
+
+def default_home() -> Path:
     """HERMES_HOME if set, else %LOCALAPPDATA%/hermes on Windows, else ~/.hermes."""
     env = os.environ.get("HERMES_HOME")
     if env:
@@ -50,29 +56,35 @@ def _default_home() -> Path:
     return Path.home() / ".hermes"
 
 
-HERMES_HOME = _default_home()
-ORIGINAL = 'out_params["_meta"] = out_meta'
+def search_roots(home: Path) -> list[Path]:
+    """Every root an mcp install can hide under on this host.
 
-
-def targets(root: Path) -> list[Path]:
-    """Every `mcp/shared/jsonrpc_dispatcher.py` Hermes may import mcp from.
-
-    A Windows install carries at least three: hermes-agent/venv,
-    installs/<id>/environments/<id>/venv, and the uv package cache. The one the
-    MCP client actually loads is not necessarily hermes-agent/venv.
+    - HERMES_HOME: the desktop layout keeps venvs, a uv package cache and per-install
+      environments underneath it (more than one copy is normal - patch them all, the MCP
+      client does not necessarily load the one in hermes-agent/venv).
+    - sys.prefix: whichever venv is running this script.
+    - /usr/local/lib/hermes-agent: a Linux/server install keeps the venv outside HERMES_HOME,
+      so a script that only globs ~/.hermes reports "nothing to do" while the gateway keeps
+      failing. (See skills/devops/hermes-multimachine-sync.)
     """
+    roots = [home]
+    for extra in (Path(sys.prefix), Path("/usr/local/lib/hermes-agent")):
+        if extra.is_dir() and extra not in roots:
+            roots.append(extra)
+    return roots
+
+
+def targets(home: Path) -> list[Path]:
+    """Find every mcp/shared/jsonrpc_dispatcher.py any Hermes on this host could import."""
+    patterns = ("**/site-packages/mcp/shared/jsonrpc_dispatcher.py",
+                "**/mcp/shared/jsonrpc_dispatcher.py")
     found: list[Path] = []
-    found.extend(p for p in root.glob("**/site-packages/mcp/shared/jsonrpc_dispatcher.py") if p.is_file())
-    for extra in (root / "cache",):
-        if extra.is_dir():
-            found.extend(p for p in extra.glob("**/mcp/shared/jsonrpc_dispatcher.py") if p.is_file())
-    # Linux/system installs keep the venv OUTSIDE HERMES_HOME (e.g.
-    # /usr/local/lib/hermes-agent/venv). Without these the script reports nothing to do
-    # while the gateway keeps failing with HTTP 400 from Meta.
-    for base in (Path("/usr/local/lib/hermes-agent"), Path(sys.prefix), Path(sys.base_prefix)):
-        if not base.is_dir():
-            continue
-        found.extend(p for p in base.glob("**/site-packages/mcp/shared/jsonrpc_dispatcher.py") if p.is_file())
+    for root in search_roots(home):
+        for pattern in patterns:
+            try:
+                found.extend(p for p in root.glob(pattern) if p.is_file())
+            except OSError:
+                continue
     seen, unique = set(), []
     for path in found:
         key = str(path).lower()
@@ -104,7 +116,7 @@ def apply(path: Path, *, check: bool) -> str:
                 f"{indent}if out_meta:\n"
                 f"{indent}    # Only emit `_meta` when it carries something: Meta's hosted MCP\n"
                 f"{indent}    # servers reject an empty `_meta` object with -32602.\n"
-                f"{indent}    out_params[\"_meta\"] = out_meta\n"
+                f'{indent}    out_params["_meta"] = out_meta\n'
             )
             hits += 1
         else:
@@ -119,12 +131,27 @@ def apply(path: Path, *, check: bool) -> str:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true", help="report state without writing")
-    parser.add_argument("--home", type=Path, default=HERMES_HOME, help="Hermes home (default: auto-detected)")
+    parser.add_argument("--root", type=Path, default=None, help="extra root to scan (repeatable-ish: pass the venv/install dir)")
+    parser.add_argument("--home", type=Path, default=None, help="Hermes home (default: auto-detected)")
     args = parser.parse_args()
 
-    files = targets(args.home)
+    home = args.home or default_home()
+    if args.root and args.root.is_dir():
+        # allow an explicit extra root by scanning it directly
+        files = targets(home)
+        files.extend(p for p in args.root.glob("**/mcp/shared/jsonrpc_dispatcher.py") if p.is_file())
+        dedup, seen = [], set()
+        for f in files:
+            k = str(f).lower()
+            if k not in seen:
+                seen.add(k)
+                dedup.append(f)
+        files = sorted(dedup)
+    else:
+        files = targets(home)
+
     if not files:
-        print(f"No mcp/shared/jsonrpc_dispatcher.py found under {args.home}")
+        print(f"no mcp/shared/jsonrpc_dispatcher.py found under {home} or {sys.prefix}")
         return 1
 
     needs = 0
@@ -134,9 +161,9 @@ def main() -> int:
         print(f"[{state}] {path}")
 
     if args.check:
-        print("\nRe-run without --check to apply." if needs else "\nAll copies already patched.")
+        print("\nre-run without --check to apply" if needs else "\nall copies already patched")
     else:
-        print("\nDone. Restart Hermes (and the gateway) so the patched module is imported fresh.")
+        print("\ndone - restart Hermes (and the gateway) so the patched module is imported fresh")
     return 0
 
 

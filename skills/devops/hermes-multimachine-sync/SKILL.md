@@ -50,8 +50,21 @@ Never sync — machine-local: `config.yaml` (model/provider routing and ports di
 **The trap that actually bites:** `mcp_servers` lives *inside* `config.yaml`. Excluding
 `config.yaml` wholesale to protect the model section silently ships an install with **zero MCP
 servers** — the remote bot then reports the MCP tools are unavailable while the desktop works fine.
-Extract that one key to its own tracked file (`hermes config get mcp_servers > mcp_servers.yaml`)
-and make the receiving host inject it into its own `config.yaml` on every sync.
+**Do NOT build that file with `hermes config get mcp_servers > mcp_servers.yaml`.** `config get`
+REDACTES secrets before printing: `WP_API_PASSWORD` comes out as `BtFh...yojG` (11 chars) and
+`oauth.client_secret` as `fc0d...730a`. The fragment then ships **placeholders**, the receiving
+host injects them into its `config.yaml`, and every MCP server there fails to authenticate —
+including the OAuth token wipe described in the next section, because the placeholder no longer
+matches `<name>.client.json`. Build the fragment from the raw `config.yaml` as a **file** instead:
+
+```bash
+python ~/.hermes/skills/devops/hermes-multimachine-sync/scripts/write_mcp_fragment.py --check
+python ~/.hermes/skills/devops/hermes-multimachine-sync/scripts/write_mcp_fragment.py
+```
+
+It diffs every secret-looking field (length + sha256, never the value) against the fragment, takes
+a timestamped backup, and rewrites with the real values. Run `--check` after any sync that touched
+the fragment; `[MISMATCH]` there is the token-wipe bug in advance.
 
 ## MCP across two hosts
 
@@ -63,12 +76,30 @@ Three things have to travel, and only two of them are files you can commit:
    Hermes **deletes those tokens on start** when the target's `oauth.client_secret` disagrees with
    `client_secret` in `<name>.client.json`; the log blames the client_id, which looks unchanged, so
    align the two secrets before restarting or the host re-auth-loops forever.
+
+   The concrete way this bites: a `mcp_servers.yaml` built with `hermes config get` (placeholders,
+   see above) disagrees with a `client.json` that holds the real secret. Verify before blaming
+   anything else:
+
+   ```bash
+   # both should report the same len/sha for the same server
+   python ~/.hermes/skills/devops/hermes-multimachine-sync/scripts/write_mcp_fragment.py --check
+   grep -o '"client_secret": "[^"]*"' ~/.hermes/mcp-tokens/meta-ads.client.json | wc -c   # real secret = 32 chars
+   ```
+
+   Symptom-to-cause: `hermes mcp test <server>` says **Connected** but the next restart logs
+   `configured OAuth client changed (<id> -> <same id>); discarded tokens` and then parks the server
+   until you re-authorize in a browser.
 3. **Any site-packages patch a server needs** — this lives in the venv, which is per-machine, and
    must be re-applied on each host. Make it self-healing: an idempotent script that greps for the
    unpatched line and rewrites it, on a `0 */6 * * *` cron, survives package updates unnoticed.
    On a Linux/server install that venv sits **outside** `HERMES_HOME`
    (`/usr/local/lib/hermes-agent/venv`), so a patch that only globs `~/.hermes` reports "nothing to
    do" while the gateway keeps failing. Glob `sys.prefix` and `/usr/local/lib/hermes-agent` too.
+   Working example: `skills/integrations/meta-ads-mcp-hermes/scripts/patch_mcp_empty_meta.py`
+   (patches the mcp SDK's empty `_meta`, which Meta's hosted MCP servers reject with HTTP 400).
+   On Windows schedule it with `schtasks /Create /TN HermesMcpMetaPatch /TR <bat> /SC HOURLY /MO 6`;
+   note the task defaults to **Interactive only**, so it will not fire while nobody is logged in.
 
 Symptom that means you missed this: the desktop's MCP tools work, the remote's do not, and the
 remote's `hermes mcp list` shows no servers or an empty tool set.
