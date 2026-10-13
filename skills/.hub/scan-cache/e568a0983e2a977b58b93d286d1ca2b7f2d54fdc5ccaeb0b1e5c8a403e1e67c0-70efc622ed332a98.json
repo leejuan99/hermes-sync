@@ -1,0 +1,13 @@
+{
+  "bundle_hash": "sha256:e568a0983e2a977b58b93d286d1ca2b7f2d54fdc5ccaeb0b1e5c8a403e1e67c0",
+  "scanner_version": "skills-guard-v10",
+  "source": "official",
+  "source_url": "official/research/rss-feeds",
+  "verdict": "safe",
+  "trust_level": "builtin",
+  "findings": [],
+  "rules": [],
+  "scanned_at": "2026-10-13T14:50:30.374604+00:00",
+  "summary": "rss-feeds: clean scan, no threats detected",
+  "fresh": true
+}

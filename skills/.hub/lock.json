@@ -394,7 +394,7 @@
       "identifier": "official/devops/watchers",
       "trust_level": "builtin",
       "scan_verdict": "safe",
-      "content_hash": "sha256:2227eb76b474cc11",
+      "content_hash": "sha256:0f53ba8b0b52917c",
       "install_path": "devops/watchers",
       "files": [
         "SKILL.md",
@@ -405,8 +405,8 @@
       ],
       "metadata": {},
       "scan_provenance": {
-        "bundle_hash": "sha256:2227eb76b474cc11f05d4517f848600eda45b88bbe67f30ada9b2bcd31ccb7eb",
-        "scanner_version": "skills-guard-v6",
+        "bundle_hash": "sha256:0f53ba8b0b52917cf5c52e02dac5d38fb5ac68d425646a9a3cdf151c44c60c72",
+        "scanner_version": "skills-guard-v10",
         "source": "official",
         "source_url": "official/devops/watchers",
         "verdict": "safe",
@@ -425,19 +425,19 @@
         "rules": [
           "python_environ_get_secret"
         ],
-        "scanned_at": "2026-09-29T14:41:50.691331+00:00",
+        "scanned_at": "2026-10-13T14:50:28.946021+00:00",
         "summary": "watchers: safe — 1 finding(s) in exfiltration",
         "fresh": true
       },
-      "installed_at": "2026-09-29T14:41:50.710225+00:00",
-      "updated_at": "2026-09-29T14:41:50.710225+00:00"
+      "installed_at": "2026-10-13T14:50:28.968698+00:00",
+      "updated_at": "2026-10-13T14:50:28.968698+00:00"
     },
     "rss-feeds": {
       "source": "official",
       "identifier": "official/research/rss-feeds",
       "trust_level": "builtin",
       "scan_verdict": "safe",
-      "content_hash": "sha256:10674c52ae6ca2f6",
+      "content_hash": "sha256:e568a0983e2a977b",
       "install_path": "research/rss-feeds",
       "files": [
         "SKILL.md",
@@ -445,20 +445,20 @@
       ],
       "metadata": {},
       "scan_provenance": {
-        "bundle_hash": "sha256:10674c52ae6ca2f6eed183ab5aefc33fcc0d0a89e5f7d0638951c14f7f6a792c",
-        "scanner_version": "skills-guard-v6",
+        "bundle_hash": "sha256:e568a0983e2a977b58b93d286d1ca2b7f2d54fdc5ccaeb0b1e5c8a403e1e67c0",
+        "scanner_version": "skills-guard-v10",
         "source": "official",
         "source_url": "official/research/rss-feeds",
         "verdict": "safe",
         "trust_level": "builtin",
         "findings": [],
         "rules": [],
-        "scanned_at": "2026-09-29T14:42:06.168448+00:00",
+        "scanned_at": "2026-10-13T14:50:30.374604+00:00",
         "summary": "rss-feeds: clean scan, no threats detected",
         "fresh": true
       },
-      "installed_at": "2026-09-29T14:42:06.184959+00:00",
-      "updated_at": "2026-09-29T14:42:06.184959+00:00"
+      "installed_at": "2026-10-13T14:50:30.388159+00:00",
+      "updated_at": "2026-10-13T14:50:30.388159+00:00"
     },
     "comfyui": {
       "source": "official",
