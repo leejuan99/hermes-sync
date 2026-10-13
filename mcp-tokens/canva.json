@@ -1,9 +1,9 @@
 {
-  "access_token": "oUYPb7cVXURR_8jxVCrRkE:LPOcFJ7aIYsVuADP:FCtCXNjOn99rlVCd7aR8ve8316g6juGs",
+  "access_token": "oUYPb7cVXURR_8jxVCrRkE:LPOcFJ7aIYsVuADP:_FzOKRJH8c8GwKEmpal3frHiN4Y4mbgL",
   "token_type": "Bearer",
   "expires_in": 14400,
   "scope": "profile:read design:meta:read design:content:write design:content:read folder:read folder:write brandtemplate:content:read brandtemplate:meta:read brandtemplate:content:write comment:write comment:read asset:read asset:write brandkit:read help:answers:read help:answers:write",
-  "refresh_token": "oUYPb7cVXURR_8jxVCrRkE:LPOcFJ7aIYsVuADP:qhNMWTmBGQtauuwgSgTjTSyS_H95xxaq",
-  "expires_at": 1791831038.2467737,
+  "refresh_token": "oUYPb7cVXURR_8jxVCrRkE:LPOcFJ7aIYsVuADP:DhQONhzbBiE_UdnXTHvnbU4jn-D4J4E2",
+  "expires_at": 1791883869.1882179,
   "hermes_issuer": "https://mcp.canva.com"
 }
