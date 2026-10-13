@@ -664,13 +664,15 @@
     "created_by": null,
     "first_seen_at": "2026-10-05T04:24:55.108456+00:00",
     "last_patched_at": null,
-    "last_used_at": null,
-    "last_viewed_at": null,
+    "last_reused_patch_generation": 0,
+    "last_used_at": "2026-10-13T14:56:30.776285+00:00",
+    "last_viewed_at": "2026-10-13T14:56:30.769427+00:00",
     "patch_count": 0,
+    "patch_generation": 0,
     "pinned": false,
     "state": "archived",
-    "use_count": 0,
-    "view_count": 0
+    "use_count": 1,
+    "view_count": 1
   },
   "grounded-citations": {
     "archived_at": null,
