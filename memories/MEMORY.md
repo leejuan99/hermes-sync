@@ -1,5 +1,3 @@
-User: casual Indonesian (bray, lo/gua, gass, susah njir). Prefers GUI over CLI, wants quick action, execute directly instead of manual step-by-step. Unfamiliar with dev basics - explain from scratch. Windows, C:\Users\pc, Node 25.8.1, Edge. Shared private SSH key in chat - educated on security. Gets angry when things don't work.
-§
 WhatsApp bot (Baileys, bot mode): bot 6285218011693, owner 62817777616 / LID 36885279826005 — all in WHATSAPP_ALLOWED_USERS.
 §
 User runs Smart Millionaire: Coway air purifiers + digital products MLM. WP smartmillionaire.co.id + member.smartmillionaire.co.id (Sejoli + custom 'smart-binary' binary MLM plugin, points-based). Target: pool komisi max 40-50% revenue, struktur bonus simple (4-5 inti, no BV), threshold akumulasi poin untuk node tree.
@@ -17,3 +15,5 @@ Novamira MCP: write-file AND edit-file block .php writes outside wp-content/nova
 VPS gateway: multiplex_profiles=true → ticks default+dm (verify: grep 'tick N profile(s) under multiplex' gateway.log). Each profile needs its OWN bot token — token lock blocks sharing one Telegram token. `hermes -p X cron status` false-negatives under multiplex.
 §
 VPS model = openrouter/deepseek-v3.2. OpenRouter credits are the single point of failure: HTTP 402 'requires more credits' killed 61 cron runs. Check errors.log for 402 before debugging anything else.
+§
+Composio API Key: ak_0HE_sx04_gVJo0fKZy2H (new, replace old)

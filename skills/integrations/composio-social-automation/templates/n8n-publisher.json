@@ -1,0 +1,98 @@
+{
+  "name": "SSA Social Publisher",
+  "nodes": [
+    {
+      "type": "n8n-nodes-base.webhook",
+      "name": "Due Posts Trigger",
+      "position": [250, 100],
+      "webhookPath": "ssa/v1/due-posts",
+      "httpMethod": "POST",
+      "responseMode": "onReceived",
+      "responseData": {
+        "statusCode": 200,
+        "responseData": "{}"
+      }
+    },
+    {
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "Fetch Scheduled Posts",
+      "position": [500, 100],
+      "url": "https://smartmillionaire.co.id/wp-json/ssa/v1/posts?status=scheduled&limit=10",
+      "method": "GET",
+      "headerParametersUI": {
+        "parameters": []
+      }
+    },
+    {
+      "type": "n8n-nodes-base.function",
+      "name": "Split Posts",
+      "position": [750, 100],
+      "functionCode": "return items[0].json.map(p => ({ json: p }));"
+    },
+    {
+      "type": "n8n-nodes-base.httpRequest",
+      "name": "Composio Execute Tool",
+      "position": [1000, 100],
+      "url": "https://backend.composio.dev/api/v3/tools/execute",
+      "method": "POST",
+      "headerParametersUI": {
+        "parameters": [
+          {"name": "Authorization", "value": "Bearer {{$env["COMPOSIO_API_KEY"]}}"},
+          {"name": "Content-Type", "value": "application/json"}
+        ]
+      },
+      "bodyParametersUI": {
+        "parameters": [
+          {"name": "entity_id", "value": " {{$json["user_id"]}} "},
+          {"name": "toolkit_slug", "value": " {{$json["platform"]}} "},
+          {"name": "tool_name", "value": " {{$json["tool"]}} "},
+          {"name": "args", "value": " {{$json["args"] | jsonParse}} "}
+        ]
+      }
+    },
+    {
+      "type": "n8n-nodes-base.webhook",
+      "name": "WP Callback",
+      "position": [1250, 100],
+      "webhookPath": "ssa/v1/content-callback",
+      "httpMethod": "POST",
+      "responseMode": "onReceived",
+      "responseData": {
+        "statusCode": 200,
+        "responseData": "{}"
+      }
+    }
+  ],
+  "connections": {
+    "Due Posts Trigger": {
+      "main": [
+        [
+          {"node": "Fetch Scheduled Posts", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "Fetch Scheduled Posts": {
+      "main": [
+        [
+          {"node": "Split Posts", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "Split Posts": {
+      "main": [
+        [
+          {"node": "Composio Execute Tool", "type": "main", "index": 0}
+        ]
+      ]
+    },
+    "Composio Execute Tool": {
+      "main": [
+        [
+          {"node": "WP Callback", "type": "main", "index": 0}
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {}
+}
