@@ -17,3 +17,5 @@ VPS gateway: multiplex_profiles=true → ticks default+dm (verify: grep 'tick N 
 VPS model = openrouter/deepseek-v3.2. OpenRouter credits are the single point of failure: HTTP 402 'requires more credits' killed 61 cron runs. Check errors.log for 402 before debugging anything else.
 §
 Composio API Key: ak_0HE_sx04_gVJo0fKZy2H (new, replace old)
+§
+Google Analytics connected account: 1 (entity pg-test-70d073fe-4301-4b89-88c9-de6d6b968a29, status ACTIVE)
