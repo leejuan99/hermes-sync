@@ -126,7 +126,7 @@ Quick scan before dispatching the reviewer:
 
 Call `delegate_task` directly — it is NOT available inside execute_code or scripts.
 
-The reviewer gets ONLY the diff and static scan results. No shared context with
+The reviewer gets ONLY the diff and static scan results — but for integration-heavy changes (code calling a library/plugin/API whose source you have on disk), also pass the dependency's source path and require every assumed signature/hook/behavior to be cross-checked against it; a diff-only reviewer cannot catch wrong assumptions about someone else's code. No shared context with
 the implementer. Fail-closed: unparseable response = fail.
 
 ```python
@@ -271,7 +271,7 @@ tests exist, tests pass, no regressions.
 ## Pitfalls
 
 - **Empty diff** — check `git status`, tell user nothing to verify
-- **Not a git repo** — skip and tell user
+- **Not a git repo** — `git init` + one baseline commit is usually the right move: it enables the whole diff/review pipeline and is safe locally; skip only if the user objects to adding a repo.
 - **Large diff (>15k chars)** — split by file, review each separately
 - **delegate_task returns non-JSON** — retry once with stricter prompt, then treat as FAIL
 - **False positives** — if reviewer flags something intentional, note it in fix prompt

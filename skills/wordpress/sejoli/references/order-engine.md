@@ -67,7 +67,7 @@ How Sejoli Commerce maps multi-product onto Sejoli's one-product-per-order world
 ## Notifications
 
 - Listener: `SejoliSA\Admin\Notification` on `sejoli/order/set-status/{status}` (100/300) plus `sejoli/notification/order/{status}` (manual resend).
-- To mute notifications for one order (e.g. child orders must not email the buyer), remove the callbacks whose object class contains `Notification` from `$wp_filter['sejoli/order/set-status/'.$status]` around the `update-status` call, then restore them (keep priority + callback key from `->callbacks`).
+- To mute notifications for one order (e.g. child orders must not email the buyer), remove the callbacks whose object class contains `Notification` from `$wp_filter['sejoli/order/set-status/'.$status]` around the `update-status` call, then restore them (keep priority + callback key from `->callbacks`) inside `try/finally` so an exception can never leave buyer notifications permanently muted.
 - Placeholder injection point for multi-product receipts: the `sejoli/notification/shortcode` filter.
 
 ## Checkout-time registration & user resolution
@@ -79,12 +79,16 @@ How Sejoli Commerce maps multi-product onto Sejoli's one-product-per-order world
 ## Coupons
 
 - Table `{prefix}sejolisa_coupons`: code, user_id, coupon_parent_id, `rule` (serialized: apply_only[] product IDs, cant_apply[], max_discount, use_by_affiliate, limit_affiliate_coupon, renewal_coupon), `discount` (serialized: value, type `percentage|fixed`, usage `per_item|total`, free_shipping), usage, limit_use, limit_date, status ('active').
-- Lookup: `sejolisa_get_coupon_by_code($code)` returns the unserialized coupon array. Count usage ONCE per transaction with `sejolisa_update_coupon_usage_by_id($id)` — native bumps via `sejoli/coupon/update-usage` inside `Admin\Order::create` when `order_data['coupon']` is set.
+- Lookup: `sejolisa_get_coupon_by_code($code)` returns the unserialized coupon array. Bump usage ONCE per transaction with `sejolisa_update_coupon_usage($code)` (takes the coupon CODE — `sejolisa_update_coupon_usage_by_id()` is an empty stub in core v1.15.5, a silent no-op) — native bumps via `sejoli/coupon/update-usage` inside `Admin\Order::create` when `order_data['coupon']` is set.
 - Discount math (native): percentage → price × value/100; fixed+per_item → qty × value; fixed+total → value once; cap at `rule.max_discount`. Scope via apply_only/cant_apply.
 
 ## Product meta keys that matter
 
 `_price`, `_enable_sale` ('yes' = open; ANY other value → closed per `sejolisa_is_product_closed()` — closed products refuse native sale but orders can still be written against them), `_product_type` (digital|physical), `_product_format`, `_payment_type`, `_sejoli_enable_affiliate` ('' = off), `_product_weight`, `_disable_sale_time`. Read carbon fields with `sejolisa_carbon_get_post_meta($id,'field')` (resolves `_field`).
+
+`sejolisa_is_product_closed()` reads `$product->_enable_sale` and nothing in core ever assigns that property — it is WordPress ≥6.4 "meta as property" magic (`$post->_<meta_key>` resolves post meta lazily: `property_exists()` returns false yet plain reads and `isset()` work, and `get_object_vars()` won't list it). Don't hunt for a setter; a fresh `get_post()` already resolves it.
+
+Variant detection: the carbon field is `product_variants` (complex; each row carries a nested `variant` list). To answer "does this product have variants", read `sejolisa_carbon_get_post_meta($id, 'product_variants')` and check non-empty — the sub-field name `variant` alone matches nothing.
 
 ## Working with the core source
 

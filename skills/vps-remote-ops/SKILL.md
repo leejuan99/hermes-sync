@@ -32,6 +32,8 @@ Pitfalls:
 - aaPanel 404 on /a83a1c60/ path: APSESS_PATH_RE middleware requires apsess_ token prefix. Fix: enable wrap_apsess_middleware(app) AND add /a83a1c60/ to public_paths whitelist in require_apsess().
 - WordPress Sejoli LMS member login at /member-area/login/ uses custom table prefix (wplo_ / wplox_). Check wp-config.php for $table_prefix; user tables are wplox_users / wplox_usermeta, not wp_users / wp_usermeta.
 - WhatsApp bot (Baileys) runs on local PC, not VPS. For 24/7 operation, deploy bot to VPS (Docker/container) or use Telegram bot via telegram-messaging skill.
+- Copying code trees OFF the VPS: per-file `scp -r` stalls on thousands of small files (a WP plugin ≈8k files). Use a tar pipe: `ssh -i <key> -p 2222 root@<vps> 'tar czf - -C <dir> <name>' > dump.tar.gz && tar xzf dump.tar.gz`.
+- Lint/smoke-test site code WITHOUT deploying: copy the tree to `/tmp/<name>` on the VPS and run the site's PHP binary (`/www/server/php/<ver>/bin/php -l <file>`; this stack = `83`). member.smartmillionaire.co.id is a LIVE business site — build/lint in `/tmp`, deploy only on explicit user go, and ship new checkout features behind off-by-default toggles.
 - Cron cleanup weekly at 03:00 WIB: `0 3 * * 0 rm -rf /root/.hermes/cache/uv/* /root/.hermes/cache/terminal-output/* 2>/dev/null`
 
 
