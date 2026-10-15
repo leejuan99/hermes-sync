@@ -21,6 +21,7 @@ Sejoli powers membership + affiliate commissions on the Smart Millionaire WordPr
 - "What's the commission for [member group] on [product]?"
 - "Find product X / give me the link."
 - Member-access checks ("does user X have LUNAS access to product Y?").
+- Building an addon/plugin on top of Sejoli (custom checkout, cart, catalog, multi-product orders) — internals map in "Checkout & order engine" below.
 
 ## Data model
 
@@ -45,6 +46,14 @@ Use `get_post_meta($id,'key',true)` for scalars (price, commission) and `get_pos
 - `sejolisa_carbon_get_post_meta($post_id, 'field')` — reads Carbon Fields complex meta (the canonical reader for commission fields).
 - Affiliate identity from an order: `sejolisa_get_order(['ID'=>$id])['orders']` carries `affiliate_id` + `affiliate_name` (display name, joined) + `product_id` + `status`. Affiliate phone is user meta — try keys `phone`, `user_phone`, `billing_phone`, `handphone`, `no_hp`, `whatsapp` in order; for wa.me links normalize by stripping non-digits and mapping `0…`→`62…`, `8…`→`628…`.
 
+## Checkout & order engine (building addons)
+
+Sejoli has **no multi-product order** — one order row = one product, table `{prefix}sejolisa_orders`. The native funnel's "checkout page" IS the product page (`/product/<slug>`); a bare `/checkout` route does NOT exist natively (a bare request 404s). Only `/checkout/loading`, `/checkout/thank-you`, `/checkout/renew` are registered (rewrite → query var `sejolisa_checkout_page`), so an addon can claim `/checkout` without touching native funnels.
+
+Before writing any checkout/order addon, read `references/order-engine.md`: order creation flow + grand-total filter-chain priorities, the `sejoli/order/update-status` status funnel, payment-module resolution and gateway gating, the container-product pattern for multi-product transactions, commission-cache and notification-suppression quirks, checkout registration, coupon table structure, and how to copy the core source locally for grepping.
+
+The in-progress multi-product checkout addon built on these internals ("Sejoli MultiCart", `C:\Users\pc\projects\sejoli-multicart`) is documented in `references/multicart-addon.md` — architecture, decisions, remaining work.
+
 ## Commission model
 
 Commissions are Carbon Fields "complex" (repeatable) fields, set at two levels and often empty at the product level (meaning: fall back to the group default). Full structure, example values, and the raw meta-key format: `references/commission-model.md`.
@@ -67,3 +76,6 @@ Commissions are Carbon Fields "complex" (repeatable) fields, set at two levels a
 - Product-level `_sejoli_commission` is empty on most products — don't conclude "no commission" without also checking the buyer's group (`_group_commissions` global tiers + `_group_setup_per_product` overrides).
 - Commission `type` is `fixed` (Nilai Tetap) or `percentage` (Persentase); a bare number without the type is ambiguous (e.g. `40` = 40%, not Rp 40).
 - Member access has no admin bypass in Sejoli's raw access API — an administrator is still "no access" to a paid product unless they own it (relevant when the owner sees the locked form on their own campaign).
+- `sejolisa_create_order()` inserts a row and NOTHING else — `sejoli/order/new` and `sejoli/order/set-status/*` only fire through `do_action('sejoli/order/create')` (Admin\Order::create) or when you fire them yourself. Rows written directly get no commissions, access, or notifications until you replay those hooks.
+- `SejoliSA\Admin\Affiliate::set_commission` caches `current_commissions` per REQUEST — in a batch (multi-product checkout, bulk creation) products 2..N silently get product 1's commission tiers unless you re-call `setup_product_affiliate_data($product)` on the instance (grab it from `$wp_filter['sejoli/order/new']` by class) before each `sejoli/order/new`.
+- Payment modules gate their `sejoli/order/new` listeners on exact gateway-string equality (`'manual' === $order_data['payment_gateway']`, moota/bca/bni/bri likewise). Internal/secondary orders in a batch must use a neutral gateway marker (e.g. `multicart`) or bank/moota modules write unique-code transaction rows for them. `apply_filters('sejoli/payment/module', $gw)` just `explode(':::', …)[0]` — any marker passes through.
