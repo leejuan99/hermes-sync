@@ -26,11 +26,11 @@ The user's own multi-product checkout addon for their Sejoli store — a non-des
 
 ## Status & remaining work
 
-v0.1.1: all independent-reviewer findings applied (child-gateway restore, atomic submit lock via the INSERT IGNORE option pattern, guest-cart clearing, coupon policy + rounding invariant, recurring-product block, cleanup cron); coupon math proven by a pure-logic harness at `…\cache\scratch\smc-tests\coupon-test.php` (runs under PHP 8.3 with WP stubs, no WordPress). v0.2.0: storefront/drawer/checkout UI port from the user's React prototype (section below). All QC gates green (PHP lint, `node --check`, selector contract); installable ZIP handed to the user; NOT deployed.
+v0.1.1: all independent-reviewer findings applied (child-gateway restore, atomic submit lock via the INSERT IGNORE option pattern, guest-cart clearing, coupon policy + rounding invariant, recurring-product block, cleanup cron); coupon math proven by a pure-logic harness at `…\cache\scratch\smc-tests\coupon-test.php` (runs under PHP 8.3 with WP stubs, no WordPress). v0.2.0: storefront/drawer/checkout UI port from the user's React prototype (section below). v0.2.2–v0.2.4: the user installed v0.2.0 on production themselves, then bug-fix waves shipped to that same live install (each redeploy announced; per-version ZIP + commit kept for rollback — deploy cadence in `wordpress-plugin-ui-port` step 8). Fix wave: `[hidden]`-override bugs (empty modal covering the catalog, discount row, collapse), server-side money via a `lines` map, site-wide drawer auto-inject, logo/mixed-content, responsive grid, and instant qty (optimistic + coalescing queue — recipe in the ui-port skill's `references/interaction-patterns.md`). Live on `member.smartmillionaire.co.id`, feature enabled.
 
 Remaining:
-1. Deploy to `member.smartmillionaire.co.id` only on an explicit go-ahead; features stay OFF until toggled in Sejoli → MultiCart.
-2. End-to-end test after deploy: add 2–3 products → `/checkout` → submit → Tripay → verify child orders, member access, commissions, and that the buyer gets exactly ONE notification (parent only).
+1. QRIS Statis payment method (in progress): poster image registered in the media library as attachment 6531 → `https://member.smartmillionaire.co.id/wp-content/uploads/2026/10/qris-smart-millionaire.jpeg`. Verified findings to build on: the buyer WA payment reminder is the WP option `_on_hold_whatsapp_content`; a custom gateway key must be registered in `apply_filters('sejoli/payment/available-payment-gateways', [])` or `set_payment_gateway()` silently downgrades it to `manual`; the post-checkout pages are native `/checkout/loading` + `/checkout/thank-you?order_id=`. Goal: QRIS option on the MultiCart checkout + QR image on the instruction page + the image URL inside the WA notification.
+2. End-to-end test on live: add 2–3 products → `/checkout` → submit → Tripay → verify child orders, member access, commissions, and that the buyer gets exactly ONE notification (parent only).
 3. Phase-2 features: physical/multi-origin shipping, variants, recurring, multi-coupon engine (pill UI already built for it), multi-item notification receipt, PPN per product.
 
 ## Caveats to carry forward
@@ -64,8 +64,15 @@ grep -o "data-smc-[a-z-]*" assets/js/smc.js | sort -u > /tmp/js_sel.txt
 grep -roh "data-smc-[a-z-]*" templates includes | sort -u > /tmp/tpl_sel.txt
 comm -23 /tmp/js_sel.txt /tmp/tpl_sel.txt
 
+# Ship a fix to the live install (announce first; bump SMC_VERSION + rebuild ZIP in the
+# same pass). Tar from the PROJECT'S PARENT dir so the tarball is not inside the tree
+# being archived ('file changed as we read it'); piping the tar into `ssh 'bash -s'`
+# with a heredoc silently kills the pipe — scp the tarball instead:
+cd "C:/Users/pc/projects" && tar czf smc-deploy.tgz --exclude='sejoli-multicart/.git' sejoli-multicart && scp -i ~/.ssh/vps_key -P 2222 -q smc-deploy.tgz root@194.127.192.52:/tmp/ && rm -f smc-deploy.tgz
+# then over ssh: cd .../wp-content/plugins && rm -rf sejoli-multicart && tar xzf /tmp/smc-deploy.tgz && chown -R www:www sejoli-multicart
+
 # Installable ZIP from git (single top folder, no .git), then verify the listing:
 git archive --format=zip --prefix=sejoli-multicart/ -o "C:/Users/pc/Desktop/sejoli-multicart-<ver>.zip" HEAD
 ```
 
-Hand-over: Desktop ZIP + wp-admin GUI update steps (Plugins → Add New → Upload Plugin → "Replace current with uploaded" → Ctrl+F5). Never SCP-replace the installed plugin unless the user explicitly asks.
+Hand-over: Desktop ZIP + wp-admin GUI update steps (Plugins → Add New → Upload Plugin → "Replace current with uploaded" → Ctrl+F5). While the user iterates on live, fixes ship straight to the installed plugin over SSH — announce every redeploy and keep a per-version ZIP + commit so rollback is one file. Never push a build the user has not been told about.
