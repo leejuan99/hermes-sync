@@ -52,7 +52,7 @@ Sejoli has **no multi-product order** — one order row = one product, table `{p
 
 Before writing any checkout/order addon, read `references/order-engine.md`: order creation flow + grand-total filter-chain priorities, the `sejoli/order/update-status` status funnel, payment-module resolution and gateway gating, the container-product pattern for multi-product transactions, commission-cache and notification-suppression quirks, checkout registration, coupon table structure, and how to copy the core source locally for grepping.
 
-The in-progress multi-product checkout addon built on these internals ("Sejoli MultiCart", `C:\Users\pc\projects\sejoli-multicart`) is documented in `references/multicart-addon.md` — architecture, decisions, remaining work.
+The multi-product checkout addon built on these internals ("Sejoli MultiCart", `C:\Users\pc\projects\sejoli-multicart`) is documented in `references/multicart-addon.md` — architecture, locked decisions, the storefront/drawer/checkout UI port, verified lint/package commands, remaining work. To re-skin a plugin UI from a design prototype, use the `wordpress-plugin-ui-port` skill.
 
 ## Commission model
 

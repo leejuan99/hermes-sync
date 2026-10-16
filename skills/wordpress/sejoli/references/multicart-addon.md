@@ -1,4 +1,4 @@
-# Sejoli MultiCart addon (multi-product checkout — build in progress)
+# Sejoli MultiCart addon (multi-product checkout + storefront UI)
 
 The user's own multi-product checkout addon for their Sejoli store — a non-destructive take on the core ideas of the commercial "Sejoli Commerce" addon (sejolicommerce.com). Built on the internals documented in `references/order-engine.md`.
 
@@ -26,15 +26,46 @@ The user's own multi-product checkout addon for their Sejoli store — a non-des
 
 ## Status & remaining work
 
-All 17 files written (templates incl. catalog/checkout/minicart, CSS, JS, readme) — PHP lint clean on PHP 8.3 (`/www/server/php/83/bin/php -l` against a `/tmp` copy; NOT deployed). Pre-deploy fixes applied: variant detection key = `product_variants`; coupon usage bump = `sejolisa_update_coupon_usage($code)`. Coupon math proven by a pure-logic harness at `…\cache\scratch\smc-tests\coupon-test.php` (22 assertions: percent/fixed/per-item/total/max-cap/scope/validity — runs under PHP 8.3 with WP stubs, no WordPress needed).
+v0.1.1: all independent-reviewer findings applied (child-gateway restore, atomic submit lock via the INSERT IGNORE option pattern, guest-cart clearing, coupon policy + rounding invariant, recurring-product block, cleanup cron); coupon math proven by a pure-logic harness at `…\cache\scratch\smc-tests\coupon-test.php` (runs under PHP 8.3 with WP stubs, no WordPress). v0.2.0: storefront/drawer/checkout UI port from the user's React prototype (section below). All QC gates green (PHP lint, `node --check`, selector contract); installable ZIP handed to the user; NOT deployed.
 
 Remaining:
-1. Apply the independent reviewer pass's findings (in flight over the plugin code + the Sejoli source tree).
-2. Deploy to `member.smartmillionaire.co.id` only on the user's explicit go — they said "jangan deploy dulu": review first. Features stay OFF until toggled in Sejoli → MultiCart.
-3. End-to-end test after deploy: add 2–3 products → `/checkout` → submit → Tripay → verify child orders, member access, commissions, and that the buyer gets exactly ONE notification (parent only).
+1. Deploy to `member.smartmillionaire.co.id` only on an explicit go-ahead; features stay OFF until toggled in Sejoli → MultiCart.
+2. End-to-end test after deploy: add 2–3 products → `/checkout` → submit → Tripay → verify child orders, member access, commissions, and that the buyer gets exactly ONE notification (parent only).
+3. Phase-2 features: physical/multi-origin shipping, variants, recurring, multi-coupon engine (pill UI already built for it), multi-item notification receipt, PPN per product.
 
 ## Caveats to carry forward
 
 - Child orders carry `order_parent_id`=parent; native renewal lookups also read `order_parent_id` — fine for one-time products, revisit if subscriptions appear.
 - Parent notifications still use the container product's notification content; a `sejoli/notification/shortcode` filter hook is planned to swap in a multi-product receipt.
 - `smc_groups`/`smc_group_items` exist for reconciliation/reporting; the admin Orders list (Sejoli → Penjualan) still shows one row per child order plus the parent container row — a dedicated Multicart orders view is phase 3.
+
+## UI design port (v0.2.0)
+
+The storefront look was ported from the user's "sejoli-commerce" React prototype (`Downloads\sejoli-commerce-plugin-&-storefront-suite.zip`, extracted under `…\cache\scratch\sejoli-commerce-src`) into: storefront hero + catalog (cards, category pills with counts, search, sort, chip pagination), product detail modal (Deskripsi / Fitur & Akses / Jaminan tabs), right-side floating cart drawer (slide animation, stepper qty, AJAX refresh), and a 2-column "Checkout 1-Halaman Terpadu" (numbered step cards, coupon pill with remove-restores-totals, sticky collapsible summary, radio payment cards).
+
+New pieces: `templates/mini-items.php` (drawer body partial, shared with the AJAX re-render), `SMC_Checkout::render_partial()`, and the drawer refresh endpoint `smc_cart_items` (returns rendered HTML + count + subtotal). AJAX contract otherwise unchanged: `smc_cart_add|update|remove|count|items` (nonce `smc_cart`), `smc_apply_coupon` (nonce `smc_coupon`), `smc_submit_checkout` (nonce `smc_checkout`, returns `redirect_link`).
+
+Addon-specific rules:
+- A re-skin touches ONLY `templates/*`, `assets/css/smc.css`, `assets/js/smc.js`. Endpoints, nonces, response fields and `includes/` logic stay frozen; bump `SMC_VERSION` + readme Stable tag instead, or browsers serve the old skin.
+- Templates pass JS contract data as `data-*` attributes (`data-smc-add`, `data-smc-buy`, `data-pid`, `data-unit`, `data-value`); re-verify with the selector-contract gate (`wordpress-plugin-ui-port` skill) after every template change.
+- Prototype features with no engine/data behind them stay OUT and are named in the handover: rating stars and strikethrough prices (Sejoli stores neither), bump offer / shipping / wallet / COD (phase 2).
+
+## Verified commands for this addon
+
+```bash
+# Lint every touched PHP file on a /tmp copy (never against the installed plugin):
+tar czf - templates includes assets | ssh -i ~/.ssh/vps_key -p 2222 root@194.127.192.52 \
+  "rm -rf /tmp/smc-lint2 && mkdir -p /tmp/smc-lint2 && tar xzf - -C /tmp/smc-lint2 && \
+   cd /tmp/smc-lint2 && for f in \$(find . -name '*.php'); do /www/server/php/83/bin/php -l \$f; done"
+
+# JS syntax + selector contract (comm output must be EMPTY):
+node --check assets/js/smc.js
+grep -o "data-smc-[a-z-]*" assets/js/smc.js | sort -u > /tmp/js_sel.txt
+grep -roh "data-smc-[a-z-]*" templates includes | sort -u > /tmp/tpl_sel.txt
+comm -23 /tmp/js_sel.txt /tmp/tpl_sel.txt
+
+# Installable ZIP from git (single top folder, no .git), then verify the listing:
+git archive --format=zip --prefix=sejoli-multicart/ -o "C:/Users/pc/Desktop/sejoli-multicart-<ver>.zip" HEAD
+```
+
+Hand-over: Desktop ZIP + wp-admin GUI update steps (Plugins → Add New → Upload Plugin → "Replace current with uploaded" → Ctrl+F5). Never SCP-replace the installed plugin unless the user explicitly asks.
