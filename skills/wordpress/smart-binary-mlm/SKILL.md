@@ -18,6 +18,8 @@ metadata:
 
 Any task touching the smart-binary MLM plugin or the member site's MLM/commission/admin code: bug fixing, bonus/commission configuration, payout logic, admin UI changes, MCP access, audits.
 
+A second custom stack lives in the same member area — the social-posting suite (`smart-social-pro`, `smart-social-media`, `bitsocial-sejoli-bridge`): route it through the `smart-social-suite` skill instead of below.
+
 Custom WordPress binary-plan MLM plugin "smart-binary" on the PRODUCTION membership site member.smartmillionaire.co.id — real members and real IDR commissions/payouts (~3,400 members).
 
 ## Site & access

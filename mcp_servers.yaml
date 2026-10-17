@@ -7,7 +7,7 @@ mcp_servers:
     env:
       WP_API_URL: https://smartmillionaire.co.id/wp-json/mcp/novamira
       WP_API_USERNAME: yudira
-      WP_API_PASSWORD: BtFhYh0Z12xvUsSBvmMEyojG
+      WP_API_PASSWORD: qqaQzvmafmzBfXmf2EXwOteB
     enabled: true
   make:
     type: http
@@ -61,7 +61,7 @@ mcp_servers:
     env:
       WP_API_URL: https://member.smartmillionaire.co.id/wp-json/mcp/novamira
       WP_API_USERNAME: leejuan
-      WP_API_PASSWORD: aPQVTSYrCBGDiJrb5RG7LLgq
+      WP_API_PASSWORD: NVGSfS5lxbnNAT0idmLY8HwX
     enabled: true
   canva:
     url: https://mcp.canva.com/mcp
