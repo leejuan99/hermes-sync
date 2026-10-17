@@ -62,6 +62,31 @@ The plugin panel consolidates the buyer-notification knobs in ONE page (the owne
 - **QRIS image URL** (`smc_qris_image_url`, plain WP option) with live preview; used by the thank-you page swap, the download button, and the WhatsApp/email link.
 - CLI testing caveat: `check_admin_referer` fails in `wp eval-file` ("Tautan kadaluwarsa") even with `wp_set_current_user(1)` + fresh nonce — test `SMC_Settings::handle_post()` directly via `ReflectionMethod` instead; the nonce gate itself is fine (wp_verify_nonce self-test returns OK; the browser form works).
 
+## Multi-coupon (best-of engine)
+
+- `SMC_Coupon::best_of( $codes, $items )` — computes EVERY entered code (find → validate → calculate on the ORIGINAL items), then picks the best discount **PER PRODUCT LINE** (sejolicommerce docs semantics: NO stacking; each line takes its largest single-coupon discount; different products may use DIFFERENT coupons simultaneously; ties → first entered wins). Returns `lines[]` (pid → discount), `coupons[]` (contributors), `primary` (largest contribution — stored on the group row), and `results[]` per code `{code, valid, message, discount = contribution, applied = contribution > 0}`.
+- `smc_groups` keeps only ONE coupon slot (coupon_id/coupon_code) — store the PRIMARY contributor; usage is bumped for EVERY contributing coupon in `handle_submit` AFTER the whole transaction succeeds (create_orders must NOT bump by itself — it was moved out).
+- Checkout UI: comma/;/newline-separated input (Enter applies), removable chips, dark count badge in the section title, per-coupon notes ('✓ X dipakai' vs 'ada diskon lebih besar'). JS state `couponCodes` array; removing a chip re-posts the remainder; invalid codes are dropped from state with their messages shown. Base line totals are snapshotted from `data-value` at init so 'all removed' restores exact original numbers.
+- Live test coupons worth knowing: `VRS100K` (cart-wide fixed 100k/item), `FULL` (100% on products [5129,4867]), `NETWORKER10X` (20k/item on [5129]), `PROMOJULI` (100k total on [2205,387]), `RENEWMPO` (cart-wide 2jt/item — huge, use for winner tests carefully). Submit accepts `coupon_codes` comma-separated with `coupon_code` fallback.
+
+## Checkout Bump Offer (Special Offer)
+
+- Config in Sejoli → MultiCart: `bump_enabled`, `bump_product_id` (any sejoli-product except the container; the bump product stays independently purchasable — nothing locks it), `bump_price` (0 = product price; a LOWER value adds strikethrough + "Anda hemat" pill), `bump_description`, `bump_button_text`.
+- Rendering: `SMC_Checkout::get_bump_offer($items)` in `maybe_render()` → `$smc['bump']` → card between the coupon section and payment methods (dashed amber, star icon, product row, two-way button; section carries `is-in-cart` + `data-bump-product`).
+- Toggle: AJAX `smc_bump_toggle` (nonce `smc_cart` — the JS `post()` nonce map routes it to `SMC_CHECKOUT.cart_nonce`), `mode=add|remove`; add is idempotent (`SMC_Cart::add_bump()` never bumps quantity, (re)applies the override), remove deletes the line; JS reloads the page after a successful toggle.
+- Price override: DB v2 adds `smc_cart_items.price_override` (double, default 0); `SMC_Cart::detailed()` uses it when > 0. The override flows the whole way: cart summary → checkout subtotal → `smc_group_items.unit_price` → child order totals (verified live: order 4131, child 4133 unit_price 238800 vs base 398000). Only apply an override when the configured price is lower than the product base price.
+- Migration recipe: `maybe_upgrade()` runs on load whenever `smc_db_version` ≠ `SMC_Install::DB_VERSION` → add the column to the dbDelta schema array and bump the const; nothing else needed.
+- Settings render smoke-test caveat: `SMC_Settings::render_page()` outputs nothing without caps under wp-cli — call `wp_set_current_user(1)` in `wp eval` first.
+
+## Storefront /toko (front page)
+
+- Shortcode `[sejoli_multicart_storefront]` (attrs: `products` = latest N, `title` override) renders `templates/storefront.php`: emerald gradient hero (pill + hero_title/hero_subtitle from settings, editable in Sejoli → MultiCart "Storefront / Halaman Depan") + INSTANT search box + category tiles (standard `category` taxonomy, `smc_cat` links into the catalog) + latest-products grid.
+- Page `/toko` is auto-created by `ensure_default_pages()` (option `storefront_page_id`); `maybe_upgrade()` now re-runs `ensure_default_pages()` whenever `SMC_Install::DB_VERSION` bumps (v3), so adding another default page is just array/const work.
+- Instant search: debounce 220ms → AJAX `smc_search_suggest` (nonce `smc_cart` via the standard `post()` helper; registered in `SMC_Shortcodes::init`; handler `SMC_Shortcodes::handle_search_suggest`). Rows render thumbnail + title + price; clicking navigates to `catalog_url?smc_q=<product title>`; Enter/Cari does the same with the raw query. Dropdown state lives in `[data-smc-suggest]` with `data-catalog-url`.
+- Shared partials: `templates/parts/product-card.php` and `templates/parts/product-modal.php` — included by BOTH catalog.php and storefront.php (keep the selector contract when touching them).
+- `auto_minicart()` now also injects the floating drawer on storefront pages (has_shortcode check extended).
+- CLI caveat applies to suggest too: nonce gates fail under `wp eval` (`-1` output) — verify AJAX handlers in the browser, not wp-cli.
+
 ## Verified commands for this addon
 
 ```bash
