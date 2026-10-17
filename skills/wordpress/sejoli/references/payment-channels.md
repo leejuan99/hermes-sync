@@ -34,6 +34,14 @@ Then verify BOTH the reader (`sejolisa_carbon_get_theme_option('manual_transacti
 - GUARD BY STATUS: decorate only `on-hold` (unpaid) orders with payment instructions — the same filter fires for completed/cancelled notifications too.
 - Template-level alternative: register a merge tag via `sejoli/notification/shortcode` and have the owner place it in the body option (`_on_hold_whatsapp_content` etc.). Only worth it when the owner wants editorial control of placement; a conditional append needs no template edit.
 
+## Order-detail internals & the "receipt" pattern (multi-product orders)
+
+- `{{invoice-id}}` = the order ID itself (`absint($this->order_data['ID'])`). The rendered default detail is tiny: WA = `INV{{invoice-id}} {{product-name}}`; email = a 3-row table (invoice/total/product ×qty); a PPN variant exists (`order-detail-ppn.php`, adds `{{ppn}}` lines). Which file is used depends on the PPN setting.
+- The `order-detail` filter output is spliced into the message at main.php:540 via `safe_str_replace('{{order-detail}}', …)` — that happens AFTER `{{order-grand-total}}` replacement but BEFORE `{{order-meta}}` / `{{payment-gateway}}`. So never inject unresolved placeholders into the returned detail; compute values yourself.
+- **Never hardcode a bank account in `_on_hold_*` templates** — QRIS orders then receive "transfer ke rekening BCA…" instructions. Append per-gateway payment info from the `sejoli/notification/content/order-detail` filter instead: QRIS → the QR image URL (WhatsApp auto-links it), manual bank → `Rekening <BANK> <account> a.n <owner>` read from the matching `manual_transaction_info` row (match by the `bank-chosen` subtype suffix index).
+- **Receipt for MultiCart parent orders:** detect the parent by `product_id == container_product_id`; itemize from the plugin's own tables — `smc_groups` (subtotal / discount / coupon_code / grand_total, keyed by `parent_order_id`) + `smc_group_items` (product_id, quantity, line_total, one row per cart line). Unique code lives in parent order meta `meta_data['manual']['unique_code']` (fallback: `grand_total − (subtotal − discount)`). WhatsApp gets plain text with a dashed separator; email gets a compact `<table>`.
+- Floating-cart automatically injected site-wide becomes noise: gate `wp_footer` auto-injection on `has_shortcode($post->post_content, '…catalog') || has_shortcode(…, '…cart')` so the drawer only appears on the catalog & cart pages.
+
 ## Thank-you page (v2): countdown & mobile-layout quirks
 
 - **FlipClock rebuilds the container after DOM ready.** On the v2 thankyou page Sejoli's checkout JS runs `FlipClock` on `.countdown-payment-run` at document-ready and EMPTIES/replaces that container — any countdown node you inject during footer parse gets wiped. Mount UI from `window.load` plus a retry watchdog (e.g. `setInterval` ~24×250ms, stop once mounted).

@@ -53,6 +53,15 @@ Addon-specific rules:
 - Component CSS must out-specify the generic `.smc img` rule (`max-width:100%;height:auto`, specificity 0-1-1): a bare `.smc-payment__logo` (0-1-0) silently loses and brand logos render at natural size (the QRIS wordmark filled the whole payment tile). Write `.smc-payment .smc-payment__logo { height:28px; max-width:96px; object-fit:contain }` — two classes beat class+element. When a `height` rule "doesn't apply", measure `getComputedStyle` and hunt for a competing generic rule before changing anything else.
 - Logos from different sources carry different baked-in padding: equal box heights ≠ equal perceived size (BCA.png includes whitespace; the QRIS wordmark is tight-cropped). Tune to the VISIBLE mark's weight and confirm with a vision pass — box measurements alone will read as "balanced" while the tile still looks off.
 
+## Admin settings surface (Sejoli → MultiCart)
+
+The plugin panel consolidates the buyer-notification knobs in ONE page (the owner complained about editing split across two wp-admin locations):
+
+- **Template editors**: "Konten WhatsApp" / "Konten Email" textareas for the on-hold ("Menunggu Pembayaran") notification — they read/write the SAME options Sejoli itself uses (`_on_hold_whatsapp_content` / `_on_hold_email_content`), so both UIs stay in sync and the native notification pipeline is untouched. Save via `update_option` + `wp_kses_post`.
+- **Toggles**: `receipt_enabled` (itemized receipt for multi-product orders) and `notif_payment_info` (per-gateway payment info on on-hold) — stored in the `smc_settings` option array; honored at the top of `maybe_receipt()` / inside `append_notification_line()`.
+- **QRIS image URL** (`smc_qris_image_url`, plain WP option) with live preview; used by the thank-you page swap, the download button, and the WhatsApp/email link.
+- CLI testing caveat: `check_admin_referer` fails in `wp eval-file` ("Tautan kadaluwarsa") even with `wp_set_current_user(1)` + fresh nonce — test `SMC_Settings::handle_post()` directly via `ReflectionMethod` instead; the nonce gate itself is fine (wp_verify_nonce self-test returns OK; the browser form works).
+
 ## Verified commands for this addon
 
 ```bash
